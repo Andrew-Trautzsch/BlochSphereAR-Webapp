@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AccordionMenu from './AccordionMenu';
 import DefaultRotationMenu from './DefaultRotationMenu';
 import CustomRotationMenu from './CustomRotationMenu';
+import QuantumGatesMenu from './QuantumGatesMenu'; // 1. Import the new menu
 
 export default function SideMenu({ rotation, setRotation }) {
   // State to manage which menu is open. 'default', 'custom', 'gates', or null
@@ -25,16 +26,14 @@ export default function SideMenu({ rotation, setRotation }) {
         <CustomRotationMenu rotation={rotation} setRotation={setRotation} />
       </AccordionMenu>
 
-      {/* Placeholder for your next menu */}
-      {/*
+      {/* 2. Add the new menu here */}
       <AccordionMenu
         title="Quantum Gates"
         isOpen={openMenu === 'gates'}
         setIsOpen={() => setOpenMenu(openMenu === 'gates' ? null : 'gates')}
       >
-        <p>Quantum Gate buttons will go here.</p>
+        <QuantumGatesMenu rotation={rotation} setRotation={setRotation} />
       </AccordionMenu>
-      */}
     </div>
   );
 }
