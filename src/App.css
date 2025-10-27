@@ -82,3 +82,25 @@ html, body, #root {
 .accordion-content {
   padding: 10px 0;
 }
+
+.input-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.input-group label {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  margin-right: 10px;
+}
+
+.input-group input[type="number"] {
+  width: 100px;
+  padding: 5px;
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+}

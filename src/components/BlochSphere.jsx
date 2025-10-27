@@ -13,17 +13,15 @@ function Sphere() {
 }
 
 function BlochElements({ rotation }) {
-
-  const euler = useMemo(() => new THREE.Euler(...rotation, 'XYZ'), [rotation]);
-  
   const direction = useMemo(() => {
-    // --- THIS IS THE FIX ---
-    // Start with a base vector pointing up (|0⟩ state along +Y axis)
+    // --- FIX 1: Set base vector to Y-axis ---
     const base = new THREE.Vector3(0, 1, 0); 
-    // --- END FIX ---
+    // --- END FIX 1 ---
     
-    return base.applyEuler(euler);
-  }, [euler]); 
+    // Apply the quaternion rotation directly to the base vector
+    return base.applyQuaternion(rotation);
+
+  }, [rotation]);
 
   return (
     <>
@@ -41,17 +39,17 @@ function BlochElements({ rotation }) {
         ]}
       />
 
-      {/* Polar labels */}
-      <Html position={[0, 1.2, 0]} center>
+      {/* --- FIX 2: Move Labels to Y-Axis --- */}
+      <Html position={[0, 1.2, 0]} center> 
         <div style={{ color: 'white', fontSize: '1rem' }}>|0⟩</div>
       </Html>
       <Html position={[0, -1.2, 0]} center>
         <div style={{ color: 'white', fontSize: '1rem' }}>|1⟩</div>
       </Html>
+      {/* --- END FIX 2 --- */}
     </>
   );
 }
-
 
 export default function BlochSphere({ rotation }) {
   return (

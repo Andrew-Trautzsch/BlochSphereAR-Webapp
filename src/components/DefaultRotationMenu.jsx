@@ -1,55 +1,63 @@
-import React from 'react';
+import React, { useState } from 'react';
+import * as THREE from 'three';
 
-// Helper to convert degrees to radians
+// Helpers
 const degToRad = (deg) => (deg * Math.PI) / 180;
-
-// Helper to wrap angles between -180 and 180
 const wrapAngle = (angle) => {
-  return (angle + 180) % 360 - 180;
+    return ((((angle + 180) % 360) + 360) % 360) - 180;
 }
 
-export default function SideMenu({ rotation, setRotation }) {
-  // We manage state in radians, but sliders are more intuitive in degrees
-  const rotDeg = {
-    x: (rotation[0] * 180) / Math.PI,
-    y: (rotation[1] * 180) / Math.PI,
-    z: (rotation[2] * 180) / Math.PI,
+export default function DefaultRotationMenu({ rotation, setRotation }) {
+  const [localEulerDeg, setLocalEulerDeg] = useState({ x: 0, y: 0, z: 0 });
+
+  const handleEulerChange = (newEulerDeg) => {
+    // 1. Update local slider state
+    setLocalEulerDeg(newEulerDeg);
+
+    // 2. Convert new degrees to radians
+    const eulerRad = new THREE.Euler(
+      degToRad(newEulerDeg.x),
+      degToRad(newEulerDeg.y),
+      degToRad(newEulerDeg.z),
+      // --- THIS IS THE FIX ---
+      // Change rotation order to 'YXZ' for a Y-Up system
+      'YXZ'
+      // --- END FIX ---
+    );
+
+    // 3. Convert Euler to Quaternion and update global state
+    setRotation(new THREE.Quaternion().setFromEuler(eulerRad));
   };
 
   // Handle changes from any slider
-  const handleRotationChange = (axis, value) => {
-    const newRotDeg = { ...rotDeg };
-    newRotDeg[axis] = parseFloat(value); // Update the degree value for the correct axis
-
-    // Set the state in radians for THREE.js
-    setRotation([
-      degToRad(newRotDeg.x),
-      degToRad(newRotDeg.y),
-      degToRad(newRotDeg.z),
-    ]);
+  const handleSliderChange = (axis, value) => {
+    const newEulerDeg = { ...localEulerDeg };
+    newEulerDeg[axis] = parseFloat(value);
+    handleEulerChange(newEulerDeg);
   };
 
   // Handle preset button clicks
   const handlePresetChange = (axis, angleToAdd) => {
-    const currentAngle = rotDeg[axis];
+    const currentAngle = localEulerDeg[axis];
     const newAngle = wrapAngle(currentAngle + angleToAdd);
-    handleRotationChange(axis, newAngle);
+    
+    const newEulerDeg = { ...localEulerDeg };
+    newEulerDeg[axis] = newAngle;
+    handleEulerChange(newEulerDeg);
   };
 
   return (
-    <div className="side-menu">
-      <h3>Default Rotation (Euler)</h3>
-      
+    <>
       {/* --- X-AXIS --- */}
       <div className="slider-group">
-        <label>X-Axis: {rotDeg.x.toFixed(0)}°</label>
+        <label>X-Axis: {localEulerDeg.x.toFixed(0)}°</label>
         <input
           type="range"
           min="-180"
           max="180"
           step="1"
-          value={rotDeg.x}
-          onChange={(e) => handleRotationChange('x', e.target.value)}
+          value={localEulerDeg.x}
+          onChange={(e) => handleSliderChange('x', e.target.value)}
         />
         <div className="preset-buttons">
           <button onClick={() => handlePresetChange('x', -180)}>-180</button>
@@ -61,14 +69,14 @@ export default function SideMenu({ rotation, setRotation }) {
       
       {/* --- Y-AXIS --- */}
       <div className="slider-group">
-        <label>Y-Axis: {rotDeg.y.toFixed(0)}°</label>
+        <label>Y-Axis: {localEulerDeg.y.toFixed(0)}°</label>
         <input
           type="range"
           min="-180"
           max="180"
           step="1"
-          value={rotDeg.y}
-          onChange={(e) => handleRotationChange('y', e.target.value)}
+          value={localEulerDeg.y}
+          onChange={(e) => handleSliderChange('y', e.target.value)}
         />
         <div className="preset-buttons">
           <button onClick={() => handlePresetChange('y', -180)}>-180</button>
@@ -80,14 +88,14 @@ export default function SideMenu({ rotation, setRotation }) {
       
       {/* --- Z-AXIS --- */}
       <div className="slider-group">
-        <label>Z-Axis: {rotDeg.z.toFixed(0)}°</label>
+        <label>Z-Axis: {localEulerDeg.z.toFixed(0)}°</label>
         <input
           type="range"
           min="-180"
           max="180"
           step="1"
-          value={rotDeg.z}
-          onChange={(e) => handleRotationChange('z', e.target.value)}
+          value={localEulerDeg.z}
+          onChange={(e) => handleSliderChange('z', e.target.value)}
         />
         <div className="preset-buttons">
           <button onClick={() => handlePresetChange('z', -180)}>-180</button>
@@ -96,6 +104,6 @@ export default function SideMenu({ rotation, setRotation }) {
           <button onClick={() => handlePresetChange('z', 180)}>+180</button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

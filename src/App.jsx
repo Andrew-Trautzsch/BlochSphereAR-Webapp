@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import BlochSphere from "./components/BlochSphere";
-import SideMenu from './components/SideMenu'; // Import the new component
+import SideMenu from './components/SideMenu';
 import './App.css';
+import * as THREE from 'three'; // Import THREE
 
 function App() {
-  // State for rotation [x, y, z] in radians, lifted up from BlochSphere
-  const [rotation, setRotation] = useState([0, 0, 0]);
+  // --- CHANGE ---
+  // State is now a Quaternion, representing the sphere's orientation
+  const [rotation, setRotation] = useState(new THREE.Quaternion());
+  // --- END CHANGE ---
 
   return (
     <div className="App">
-      {/* SideMenu controls the state */}
       <SideMenu rotation={rotation} setRotation={setRotation} />
       
-      {/* Canvas container takes the remaining space */}
       <div className="canvas-container">
-        {/* BlochSphere displays the state */}
         <BlochSphere rotation={rotation} />
       </div>
     </div>
