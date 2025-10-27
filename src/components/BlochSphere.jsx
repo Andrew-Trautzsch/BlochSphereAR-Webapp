@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
-import { Html } from '@react-three/drei';
+import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
+import { useMemo } from 'react';
 
 function Sphere() {
   return (
@@ -12,7 +12,19 @@ function Sphere() {
   );
 }
 
-function BlochElements() {
+function BlochElements({ rotation }) {
+
+  const euler = useMemo(() => new THREE.Euler(...rotation, 'XYZ'), [rotation]);
+  
+  const direction = useMemo(() => {
+    // --- THIS IS THE FIX ---
+    // Start with a base vector pointing up (|0⟩ state along +Y axis)
+    const base = new THREE.Vector3(0, 1, 0); 
+    // --- END FIX ---
+    
+    return base.applyEuler(euler);
+  }, [euler]); 
+
   return (
     <>
       {/* Axes */}
@@ -22,10 +34,10 @@ function BlochElements() {
       {/* State vector (arrow) */}
       <arrowHelper
         args={[
-          new THREE.Vector3(0, 0, 0), // direction (45° between X and Y)
-          new THREE.Vector3(0, 0, 0),     // origin
-          1,                              // length
-          0xffff00                        // color (red)
+          direction,
+          new THREE.Vector3(0, 0, 0),
+          1,
+          0xffff00
         ]}
       />
 
@@ -41,13 +53,13 @@ function BlochElements() {
 }
 
 
-export default function BlochSphere() {
+export default function BlochSphere({ rotation }) {
   return (
     <Canvas camera={{ position: [0, 0, 3] }}>
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 5, 5]} />
       <Sphere />
-      <BlochElements />
+      <BlochElements rotation={rotation} />
       <OrbitControls enableZoom={true} />
     </Canvas>
   );
