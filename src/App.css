@@ -55,3 +55,30 @@ html, body, #root {
   height: 100%;
   position: relative;
 }
+
+.accordion-menu {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding-bottom: 10px; /* Use padding instead of margin on h3 */
+}
+
+.accordion-header h3 {
+  margin: 0; /* Remove default margin */
+  font-size: 1.1em;
+}
+
+.accordion-header span {
+  font-size: 1.5em; /* Make + / - symbols larger */
+  font-weight: bold;
+}
+
+.accordion-content {
+  padding: 10px 0;
+}
