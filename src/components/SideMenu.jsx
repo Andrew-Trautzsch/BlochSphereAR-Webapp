@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import AccordionMenu from './AccordionMenu';
 import DefaultRotationMenu from './DefaultRotationMenu';
 import CustomRotationMenu from './CustomRotationMenu';
-import QuantumGatesMenu from './QuantumGatesMenu'; // 1. Import the new menu
+import QuantumGatesMenu from './QuantumGatesMenu';
 
-export default function SideMenu({ rotation, setRotation }) {
-  // State to manage which menu is open. 'default', 'custom', 'gates', or null
+// Receive new props
+export default function SideMenu({ 
+  rotation, setRotation, showTrail, setShowTrail 
+}) {
   const [openMenu, setOpenMenu] = useState('default');
 
   return (
@@ -26,7 +28,6 @@ export default function SideMenu({ rotation, setRotation }) {
         <CustomRotationMenu rotation={rotation} setRotation={setRotation} />
       </AccordionMenu>
 
-      {/* 2. Add the new menu here */}
       <AccordionMenu
         title="Quantum Gates"
         isOpen={openMenu === 'gates'}
@@ -34,6 +35,24 @@ export default function SideMenu({ rotation, setRotation }) {
       >
         <QuantumGatesMenu rotation={rotation} setRotation={setRotation} />
       </AccordionMenu>
+
+      {/* --- ADD NEW VISUALIZERS MENU --- */}
+      <AccordionMenu
+        title="Visualizers"
+        isOpen={openMenu === 'visuals'}
+        setIsOpen={() => setOpenMenu(openMenu === 'visuals' ? null : 'visuals')}
+      >
+        <div className="visualizer-toggle">
+          <label htmlFor="trail-toggle">Show Vector Trail</label>
+          <input
+            id="trail-toggle"
+            type="checkbox"
+            checked={showTrail}
+            onChange={(e) => setShowTrail(e.target.checked)}
+          />
+        </div>
+      </AccordionMenu>
+      {/* --- END NEW MENU --- */}
     </div>
   );
 }
