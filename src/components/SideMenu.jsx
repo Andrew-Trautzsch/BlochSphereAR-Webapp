@@ -13,7 +13,7 @@ export default function SideMenu({
   return (
     <div className="side-menu">
       <AccordionMenu
-        title="Default Rotation (Euler)"
+        title="Default Rotation"
         isOpen={openMenu === 'default'}
         setIsOpen={() => setOpenMenu(openMenu === 'default' ? null : 'default')}
       >
