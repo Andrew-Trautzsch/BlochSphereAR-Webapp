@@ -1,22 +1,26 @@
 import { useState } from 'react';
-import BlochSphere from "./components/BlochSphere";
-import SideMenu from './components/SideMenu';
+import * as THREE from 'three';
+import Sidebar from './components/Sidebar/Sidebar';
+import BlochSphere from './components/BlochSphere/BlochSphere';
 import './App.css';
-import * as THREE from 'three'; // Import THREE
 
 function App() {
-  // --- CHANGE ---
-  // State is now a Quaternion, representing the sphere's orientation
+  // Central State: Rotation of the qubit
+  // Future upgrade: Change this to an array of objects to support multiple spheres
   const [rotation, setRotation] = useState(new THREE.Quaternion());
-  // --- END CHANGE ---
 
   return (
-    <div className="App">
-      <SideMenu rotation={rotation} setRotation={setRotation} />
+    <div className="app-layout">
+      {/* 1. Control Panel */}
+      <Sidebar 
+        rotation={rotation} 
+        setRotation={setRotation} 
+      />
       
-      <div className="canvas-container">
+      {/* 2. Visualization Area */}
+      <main className="main-content">
         <BlochSphere rotation={rotation} />
-      </div>
+      </main>
     </div>
   );
 }

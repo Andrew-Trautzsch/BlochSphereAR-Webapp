@@ -1,148 +1,19 @@
-/* Keep existing styles for html, body, #root */
 html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #000;
 }
 
-/* Update .App for side-by-side layout */
-.App {
-  width: 100%;
-  height: 100%;
+.app-layout {
   display: flex;
-  flex-direction: row; /* Arrange children side-by-side */
-  align-items: stretch; /* Make children fill the height */
-  justify-content: flex-start; /* Align to the left */
-  color: white; /* Set a default text color for the app */
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
 }
 
-.side-menu {
-  width: 300px; /* Fixed width for the menu */
-  padding: 20px;
-  background-color: #1a1a1a; /* Dark background for the menu */
-  overflow-y: auto; /* Add scroll if menu gets too tall */
-  box-shadow: 2px 0 5px rgba(0,0,0,0.5); /* Nice little shadow */
-  z-index: 10; /* Ensure it's on top */
-  flex-shrink: 0; /* Don't let the menu shrink */
-}
-
-.side-menu h3 {
-  margin-top: 0;
-  border-bottom: 1px solid #444;
-  padding-bottom: 10px;
-}
-
-.slider-group {
-  margin-bottom: 15px;
-}
-
-.slider-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-}
-
-.slider-group input[type="range"] {
-  width: 100%;
-}
-
-.canvas-container {
-  flex-grow: 1; /* Make the canvas container fill the remaining space */
-  height: 100%;
+.main-content {
+  flex-grow: 1;
   position: relative;
-}
-
-.accordion-menu {
-  margin-bottom: 10px;
-  border-bottom: 1px solid #444;
-}
-
-.accordion-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  padding-bottom: 10px; /* Use padding instead of margin on h3 */
-}
-
-.accordion-header h3 {
-  margin: 0; /* Remove default margin */
-  font-size: 1.1em;
-}
-
-.accordion-header span {
-  font-size: 1.5em; /* Make + / - symbols larger */
-  font-weight: bold;
-}
-
-.accordion-content {
-  padding: 10px 0;
-}
-
-.input-group {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.input-group label {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 0.9rem;
-  margin-right: 10px;
-}
-
-.input-group input[type="number"] {
-  width: 100px;
-  padding: 5px;
-  background-color: #333;
-  color: white;
-  border: 1px solid #555;
-  border-radius: 4px;
-}
-
-.gate-menu h4 {
-  margin-top: 15px;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-  color: #ccc;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.gate-menu p {
-  font-size: 0.8rem;
-  font-style: italic;
-  color: #ccc;
-  margin-top: 0;
-}
-
-.gate-button-group {
-  display: flex;
-  flex-wrap: wrap; /* Allow buttons to wrap to next line */
-  gap: 8px; /* Space between buttons */
-  margin-bottom: 10px;
-}
-
-.gate-button-group button {
-  flex-grow: 1; /* Allow buttons to grow and fill space */
-  min-width: 40px; /* Minimum width for each button */
-  padding: 8px 5px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  background-color: #333;
-  border: 1px solid #555;
-  border-radius: 4px;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.gate-button-group button:hover {
-  background-color: #444;
-  border-color: #777;
 }

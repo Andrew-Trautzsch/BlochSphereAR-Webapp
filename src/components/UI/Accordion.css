@@ -1,0 +1,33 @@
+.accordion-menu {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding-bottom: 10px;
+}
+
+.accordion-header h3 {
+  margin: 0;
+  font-size: 1.1em;
+  color: #eee;
+}
+
+.accordion-header span {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.accordion-content {
+  padding: 10px 0;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
