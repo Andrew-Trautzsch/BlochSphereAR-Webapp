@@ -5,21 +5,58 @@ import BlochSphere from './components/BlochSphere/BlochSphere';
 import './App.css';
 
 function App() {
-  // Central State: Rotation of the qubit
-  // Future upgrade: Change this to an array of objects to support multiple spheres
-  const [rotation, setRotation] = useState(new THREE.Quaternion());
+  // 1. Qubit State now includes 'position' [x, y, z]
+  const [qubits, setQubits] = useState([
+    { 
+      id: 1, 
+      name: 'Qubit 1', 
+      rotation: new THREE.Quaternion(), 
+      position: [0, 0, 0] 
+    }
+  ]);
+  
+  // 2. Selected ID defaults to NULL (so we see the list first)
+  const [selectedId, setSelectedId] = useState(null);
+
+  const selectedQubit = qubits.find(q => q.id === selectedId);
+
+  // Action: Add Qubit (Auto-offset position so they don't spawn inside each other)
+  const addQubit = () => {
+    const newId = Date.now();
+    const offset = qubits.length * 2.5; // 2.5 units apart
+    const newQubit = { 
+      id: newId, 
+      name: `Qubit ${qubits.length + 1}`, 
+      rotation: new THREE.Quaternion(),
+      position: [offset, 0, 0] 
+    };
+    setQubits([...qubits, newQubit]);
+    setSelectedId(newId); // Auto-open the new qubit
+  };
+
+  // Action: Generic update for Position OR Rotation
+  const updateQubit = (id, changes) => {
+    setQubits(qubits.map(q => 
+      q.id === id ? { ...q, ...changes } : q
+    ));
+  };
 
   return (
     <div className="app-layout">
-      {/* 1. Control Panel */}
       <Sidebar 
-        rotation={rotation} 
-        setRotation={setRotation} 
+        qubits={qubits}
+        selectedQubit={selectedQubit}
+        onSelect={setSelectedId}
+        onAdd={addQubit}
+        onUpdate={updateQubit} 
       />
       
-      {/* 2. Visualization Area */}
       <main className="main-content">
-        <BlochSphere rotation={rotation} />
+        <BlochSphere 
+          qubits={qubits} 
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
       </main>
     </div>
   );

@@ -67,3 +67,55 @@
   background-color: #444;
   border-color: #646cff;
 }
+
+.back-btn {
+  background: transparent;
+  border: 1px solid #555;
+  color: #ccc;
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.back-btn:hover {
+  background: #333;
+  color: white;
+}
+
+.location-panel {
+  background: #2a2a2a;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+
+.location-panel label {
+  display: block;
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.xyz-inputs {
+  display: flex;
+  gap: 5px;
+}
+
+.xyz-inputs input {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: white;
+  padding: 5px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.xyz-inputs input:focus {
+  border-color: #646cff;
+  outline: none;
+}
