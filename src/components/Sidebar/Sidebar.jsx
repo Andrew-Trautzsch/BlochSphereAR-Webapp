@@ -8,7 +8,7 @@ import './Sidebar.css';
 export default function Sidebar({ rotation, setRotation }) {
   const [activeMenu, setActiveMenu] = useState('default');
 
-  const toggleMenu =ub => (menu) => {
+  const toggleMenu = (menu) => {
     setActiveMenu(activeMenu === menu ? null : menu);
   };
 

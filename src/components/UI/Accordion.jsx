@@ -1,7 +1,7 @@
 import React from 'react';
 import './Accordion.css';
 
-export default function Accordion({Uz, title, isOpen, onToggle, children }) {
+export default function Accordion({ title, isOpen, onToggle, children }) {
   return (
     <div className="accordion-menu">
       <div className="accordion-header" onClick={onToggle}>
