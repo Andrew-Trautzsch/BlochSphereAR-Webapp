@@ -119,3 +119,62 @@
   border-color: #646cff;
   outline: none;
 }
+
+.explorer-tree {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.folder-container {
+  margin-bottom: 2px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 3px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.folder-header:hover {
+  background-color: #2a2a2a;
+}
+
+.toggle {
+  display: inline-block;
+  width: 18px;
+  text-align: center;
+  font-size: 1rem;
+  margin-right: 4px;
+  opacity: 0.8;
+}
+
+.file-list {
+  list-style: none;
+  padding: 0 0 0 22px;   /* qubits indented under folder */
+  margin: 0;
+}
+
+.file-list li {
+  padding: 4px 8px 4px 6px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 0.9rem;
+}
+
+.file-list li:hover {
+  background-color: #2a2a2a;
+}
+
+/* subtle visual connection line (optional but helps a lot) */
+.folder-container:not(:last-child) {
+  border-left: 1px solid #444;
+  margin-left: 9px;
+  padding-left: 11px;
+}

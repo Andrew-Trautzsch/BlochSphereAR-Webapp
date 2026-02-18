@@ -34,8 +34,8 @@ function SingleQubit({ rotation, position, label, isSelected, onClick }) {
       </mesh>
 
       {/* Axes & Arrow */}
-      <axesHelper args={[1.2]} />
-      <axesHelper args={[-1.2]} />
+      <axesHelper args={[1]} />
+      <axesHelper args={[-1]} />
       <arrowHelper args={[direction, new THREE.Vector3(0, 0, 0), 1, 0xffff00]} />
 
       {/* Labels */}
@@ -53,21 +53,21 @@ function SingleQubit({ rotation, position, label, isSelected, onClick }) {
 }
 
 // Main Component
-export default function BlochSphere({ qubits, selectedId, onSelect }) {
+export default function BlochSphere({ qubits, selected, highlightedIds, onSelect }) {
   return (
     <div className="bloch-container">
       <Canvas camera={{ position: [0, 2, 8] }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
-        
+
         {qubits.map((qubit) => (
           <SingleQubit
             key={qubit.id}
             rotation={qubit.rotation}
-            position={qubit.position} // Reads [x,y,z] from state
+            position={qubit.position}
             label={qubit.name}
-            isSelected={selectedId === qubit.id}
-            onClick={() => onSelect(qubit.id)}
+            isSelected={highlightedIds.has(qubit.id)}
+            onClick={() => onSelect({ type: 'qubit', id: qubit.id })}
           />
         ))}
 
