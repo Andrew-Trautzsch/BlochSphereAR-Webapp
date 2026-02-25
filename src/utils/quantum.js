@@ -1,20 +1,18 @@
 import * as THREE from 'three';
 
-// Define Axes
+// ... (Keep your existing AXIS, GATES, and createGate code) ...
+
 export const AXIS = {
   X: new THREE.Vector3(1, 0, 0),
   Y: new THREE.Vector3(0, 1, 0),
   Z: new THREE.Vector3(0, 0, 1),
-  // Hadamard axis (diagonal between X and Y)
-  H: new THREE.Vector3(1, 1, 0).normalize(),
+  H: new THREE.Vector3(1, 1, 0).normalize(), // Diagonal
 };
 
-// Helper to create a gate quaternion
 const createGate = (axis, radAngle) => {
   return new THREE.Quaternion().setFromAxisAngle(axis, radAngle);
 };
 
-// Define Gate Rotations
 export const GATES = {
   X: createGate(AXIS.X, Math.PI),
   Y: createGate(AXIS.Y, Math.PI),
@@ -26,13 +24,30 @@ export const GATES = {
   T_DAG: createGate(AXIS.Y, -Math.PI / 4),
 };
 
-// Apply a gate to a current rotation
 export const applyGate = (currentRotation, gateKey) => {
   const gateQuaternion = GATES[gateKey];
   if (!gateQuaternion) return currentRotation;
-
   const newRotation = new THREE.Quaternion();
-  // Order: new = gate * current
   newRotation.multiplyQuaternions(gateQuaternion, currentRotation);
   return newRotation;
+};
+
+// --- NEW FUNCTION ---
+// Calculates the final state after a sequence of gates
+export const simulateCircuit = (startRotation, gateSequence) => {
+  // Clone the start rotation so we don't mutate the original state
+  let currentRotation = startRotation.clone();
+
+  if (!gateSequence || gateSequence.length === 0) {
+    return currentRotation;
+  }
+
+  // Apply gates in order (Left -> Right)
+  gateSequence.forEach(gateName => {
+    if (gateName && GATES[gateName]) {
+        currentRotation = applyGate(currentRotation, gateName);
+    }
+  });
+
+  return currentRotation;
 };

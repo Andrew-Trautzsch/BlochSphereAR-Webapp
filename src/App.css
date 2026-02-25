@@ -1,19 +1,84 @@
+/* Ensure full height and prevent body scroll */
 html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background-color: #1e1e1e; /* Keep existing dark background */
 }
 
+/* Main Layout Container */
 .app-layout {
   display: flex;
-  flex-direction: row;
   width: 100vw;
   height: 100vh;
+  color: #e0e0e0; /* Keep existing text color */
 }
 
+/* Sidebar Container */
+.sidebar-container {
+  background-color: #1a1a1a;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  position: relative;
+  overflow: hidden; /* Sidebar internal scrolling is handled by Sidebar.css */
+}
+
+/* Vertical Resizer (Sidebar Handle) */
+.resizer-vertical {
+  width: 5px;
+  background: #2a2a2a;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.2s;
+  border-left: 1px solid #111;
+  border-right: 1px solid #111;
+}
+
+.resizer-vertical:hover,
+.resizer-vertical:active {
+  background: #007bff; /* Blue highlight on hover */
+}
+
+/* Main Content Area (Right Side) */
 .main-content {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
   position: relative;
+  overflow: hidden;
+}
+
+/* Sphere Pane (Top) */
+.sphere-pane {
+  position: relative;
+  width: 100%;
+  background-color: #000; /* Dark background for 3D scene */
+  overflow: hidden;
+}
+
+/* Horizontal Resizer (Circuit Handle) */
+.resizer-horizontal {
+  height: 6px;
+  background: #2a2a2a;
+  cursor: row-resize;
+  z-index: 10;
+  border-top: 1px solid #333;
+  border-bottom: 1px solid #333;
+}
+
+.resizer-horizontal:hover,
+.resizer-horizontal:active {
+  background: #007bff;
+}
+
+/* Circuit Pane (Bottom) */
+.circuit-pane {
+  background-color: #222;
+  overflow: hidden; /* CircuitGrid handles its own internal scroll */
+  display: flex;
+  flex-direction: column;
 }
