@@ -75,10 +75,62 @@ html, body, #root {
   background: #007bff;
 }
 
-/* Circuit Pane (Bottom) */
 .circuit-pane {
   background-color: #222;
-  overflow: hidden; /* CircuitGrid handles its own internal scroll */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.circuit-controls {
+  height: 40px;
+  background: #333;
+  border-bottom: 1px solid #444;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.control-btn {
+  background: #444;
+  border: 1px solid #555;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.control-btn:hover {
+  background: #555;
+}
+
+.scrubber-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+  margin-left: 10px;
+}
+
+.step-label {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #aaa;
+  min-width: 80px;
+}
+
+.scrubber-slider {
+  flex-grow: 1;
+  max-width: 400px;
+  cursor: pointer;
+}
+
+/* Container for the actual grid so it takes remaining space */
+.circuit-grid-wrapper {
+  flex-grow: 1;
+  overflow: hidden; /* Pass scroll handling to CircuitGrid */
+  position: relative;
 }

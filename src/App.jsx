@@ -8,8 +8,8 @@ import './App.css';
 
 function App() {
   // --- LAYOUT STATE ---
-  const [sidebarWidth, setSidebarWidth] = useState(360);
-  const [bottomHeight, setBottomHeight] = useState(200); // Default height for circuit
+  const [sidebarWidth, setSidebarWidth] = useState(360); // Wider default
+  const [bottomHeight, setBottomHeight] = useState(200);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isResizingBottom, setIsResizingBottom] = useState(false);
 
@@ -17,9 +17,41 @@ function App() {
   const [qubits, setQubits] = useState([
     { id: 1, name: 'Qubit 1', rotation: new THREE.Quaternion(), position: [0, 0, 0], groupId: null }
   ]);
-  const [circuit, setCircuit] = useState({}); // Stores gates: { qubitId: ["H", null, "X"] }
+  const [circuit, setCircuit] = useState({});
   const [groups, setGroups] = useState([]);
   const [selected, setSelected] = useState(null);
+
+  // --- PLAYBACK STATE ---
+  const [currentStep, setCurrentStep] = useState(0); // 0 = Initial State
+  const [isPlaying, setIsPlaying] = useState(false);
+  const MAX_STEPS = 20; // Must match CircuitGrid steps
+
+  // --- PLAYBACK ENGINE ---
+  useEffect(() => {
+    let interval;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentStep(prev => {
+          if (prev >= MAX_STEPS) {
+            setIsPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 500); // Speed: 500ms per step
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const handlePlayPause = () => setIsPlaying(!isPlaying);
+  const handleStop = () => {
+    setIsPlaying(false);
+    setCurrentStep(0);
+  };
+  const handleStepChange = (e) => {
+    setIsPlaying(false); // Stop if user scrubs manually
+    setCurrentStep(Number(e.target.value));
+  };
 
   // --- RESIZING LOGIC ---
   const startResizingSidebar = () => setIsResizingSidebar(true);
@@ -32,12 +64,10 @@ function App() {
 
   const handleMouseMove = useCallback((e) => {
     if (isResizingSidebar) {
-      // Clamp width between 200px and 600px
       const newWidth = Math.max(200, Math.min(e.clientX, 600));
       setSidebarWidth(newWidth);
     }
     if (isResizingBottom) {
-      // Clamp height between 100px and 50% of screen height
       const totalHeight = window.innerHeight;
       const newHeight = Math.max(100, Math.min(totalHeight - e.clientY, totalHeight * 0.6));
       setBottomHeight(newHeight);
@@ -55,9 +85,7 @@ function App() {
     };
   }, [isResizingSidebar, isResizingBottom, handleMouseMove, stopResizing]);
 
-  // --- QUBIT & GROUP LOGIC ---
-  
-  // Helper: Get all group IDs in a subtree
+  // --- QUBIT LOGIC ---
   const getSubtreeGroupIds = useCallback((startId) => {
     const ids = new Set([startId]);
     let added = true;
@@ -73,11 +101,9 @@ function App() {
     return Array.from(ids);
   }, [groups]);
 
-  // Highlight logic based on selection
   const highlightedQubitIds = useMemo(() => {
     if (!selected) return new Set();
     if (selected.type === 'qubit') return new Set([selected.id]);
-
     if (selected.type === 'group') {
       const subtree = getSubtreeGroupIds(selected.id);
       return new Set(
@@ -89,7 +115,6 @@ function App() {
     return new Set();
   }, [selected, qubits, getSubtreeGroupIds]);
 
-  // Group Management
   const createGroup = useCallback((parentId = null) => {
     const newId = Date.now();
     const newGroup = { id: newId, name: `Group ${groups.length + 1}`, parentId };
@@ -100,7 +125,7 @@ function App() {
   const moveGroup = useCallback((groupId, newParentId) => {
     if (newParentId !== null) {
       const subtree = getSubtreeGroupIds(groupId);
-      if (subtree.includes(newParentId)) return; // prevent cycles
+      if (subtree.includes(newParentId)) return;
     }
     setGroups(prev => prev.map(g => g.id === groupId ? { ...g, parentId: newParentId } : g));
   }, [getSubtreeGroupIds]);
@@ -143,7 +168,6 @@ function App() {
   }, [qubits, getSubtreeGroupIds]);
 
   // --- CIRCUIT LOGIC ---
-
   const handleGateChange = (qubitId, stepIndex, gateName) => {
     setCircuit(prev => {
       const row = prev[qubitId] ? [...prev[qubitId]] : [];
@@ -152,14 +176,16 @@ function App() {
     });
   };
 
-  // Compute final rotations based on circuit
+  // Compute final rotations based on circuit AND currentStep
   const computedQubits = useMemo(() => {
     return qubits.map(q => {
       const row = circuit[q.id] || [];
-      const finalRot = simulateCircuit(q.rotation, row);
+      // Slice the gates up to the current time step
+      const activeGates = row.slice(0, currentStep);
+      const finalRot = simulateCircuit(q.rotation, activeGates);
       return { ...q, rotation: finalRot };
     });
-  }, [qubits, circuit]);
+  }, [qubits, circuit, currentStep]);
 
   // --- RENDER ---
   return (
@@ -167,15 +193,12 @@ function App() {
       {/* 1. Left Sidebar */}
       <div className="sidebar-container" style={{ width: sidebarWidth }}>
         <Sidebar
-          qubits={computedQubits} // Show computed state in sidebar
+          qubits={computedQubits}
           groups={groups}
           selected={selected}
           onSelect={setSelected}
           onAddQubit={(targetGroupId = null) => {
             const newId = Date.now();
-            
-            // Auto-offset logic:
-            // Find the qubit with the largest X position to append to the right
             let maxX = -2.5;
             if (qubits.length > 0) {
                maxX = Math.max(...qubits.map(q => q.position[0]));
@@ -186,7 +209,7 @@ function App() {
               id: newId,
               name: `Qubit ${qubits.length + 1}`,
               rotation: new THREE.Quaternion(),
-              position: [startX, 0, 0], // Spawn at offset
+              position: [startX, 0, 0],
               groupId: targetGroupId
             };
             setQubits(prev => [...prev, newQubit]);
@@ -201,13 +224,12 @@ function App() {
         />
       </div>
 
-      {/* 2. Vertical Resizer (Sidebar Handle) */}
       <div className="resizer-vertical" onMouseDown={startResizingSidebar} />
 
-      {/* 3. Right Content Area (Sphere + Circuit) */}
+      {/* 2. Main Content */}
       <main className="main-content">
         
-        {/* Top: 3D Scene */}
+        {/* Sphere View */}
         <div className="sphere-pane" style={{ height: `calc(100% - ${bottomHeight}px)` }}>
           <BlochSphere
             qubits={computedQubits}
@@ -217,16 +239,41 @@ function App() {
           />
         </div>
 
-        {/* Middle: Horizontal Resizer (Circuit Handle) */}
         <div className="resizer-horizontal" onMouseDown={startResizingBottom} />
 
-        {/* Bottom: Circuit Grid */}
+        {/* Circuit Pane: Controls + Grid */}
         <div className="circuit-pane" style={{ height: bottomHeight }}>
-          <CircuitGrid 
-            qubits={qubits} 
-            circuit={circuit} 
-            onGateChange={handleGateChange} 
-          />
+          
+          {/* CONTROL BAR */}
+          <div className="circuit-controls">
+            <button className="control-btn" onClick={handlePlayPause}>
+              {isPlaying ? "⏸ Pause" : "▶ Play"}
+            </button>
+            <button className="control-btn" onClick={handleStop}>
+              ⏹ Stop
+            </button>
+            <div className="scrubber-container">
+              <span className="step-label">Step: {currentStep} / {MAX_STEPS}</span>
+              <input 
+                type="range" 
+                min="0" 
+                max={MAX_STEPS} 
+                value={currentStep} 
+                onChange={handleStepChange}
+                className="scrubber-slider"
+              />
+            </div>
+          </div>
+
+          {/* GRID */}
+          <div className="circuit-grid-wrapper">
+             <CircuitGrid 
+              qubits={qubits} 
+              circuit={circuit} 
+              onGateChange={handleGateChange}
+              currentStep={currentStep} // Pass step for highlighting
+            />
+          </div>
         </div>
       </main>
     </div>

@@ -115,3 +115,15 @@
 
 .gate-H { background: #e91e63; } /* Pink */
 .gate-X, .gate-Y, .gate-Z { background: #00bcd4; } /* Cyan */
+
+.ruler-tick.active-step {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+.gate-slot.active-slot {
+  background-color: rgba(0, 123, 255, 0.2); /* Faint blue highlight */
+  border-left: 1px solid rgba(0, 123, 255, 0.5);
+  border-right: 1px solid rgba(0, 123, 255, 0.5);
+}
