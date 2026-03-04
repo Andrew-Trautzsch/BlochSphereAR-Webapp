@@ -3,12 +3,12 @@ import * as THREE from 'three';
 import Sidebar from './components/Sidebar/Sidebar';
 import BlochSphere from './components/BlochSphere/BlochSphere';
 import CircuitGrid from './components/Circuit/CircuitGrid';
-import { simulateCircuit } from './utils/quantum';
+import { simulateAllQubits } from './utils/quantum';
 import './App.css';
 
 function App() {
   // --- LAYOUT STATE ---
-  const [sidebarWidth, setSidebarWidth] = useState(360); // Wider default
+  const [sidebarWidth, setSidebarWidth] = useState(360);
   const [bottomHeight, setBottomHeight] = useState(200);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isResizingBottom, setIsResizingBottom] = useState(false);
@@ -22,9 +22,9 @@ function App() {
   const [selected, setSelected] = useState(null);
 
   // --- PLAYBACK STATE ---
-  const [currentStep, setCurrentStep] = useState(0); // 0 = Initial State
+  const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const MAX_STEPS = 20; // Must match CircuitGrid steps
+  const MAX_STEPS = 20;
 
   // --- PLAYBACK ENGINE ---
   useEffect(() => {
@@ -32,30 +32,21 @@ function App() {
     if (isPlaying) {
       interval = setInterval(() => {
         setCurrentStep(prev => {
-          if (prev >= MAX_STEPS) {
-            setIsPlaying(false);
-            return prev;
-          }
+          if (prev >= MAX_STEPS) { setIsPlaying(false); return prev; }
           return prev + 1;
         });
-      }, 500); // Speed: 500ms per step
+      }, 500);
     }
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  const handlePlayPause = () => setIsPlaying(!isPlaying);
-  const handleStop = () => {
-    setIsPlaying(false);
-    setCurrentStep(0);
-  };
-  const handleStepChange = (e) => {
-    setIsPlaying(false); // Stop if user scrubs manually
-    setCurrentStep(Number(e.target.value));
-  };
+  const handlePlayPause  = () => setIsPlaying(!isPlaying);
+  const handleStop       = () => { setIsPlaying(false); setCurrentStep(0); };
+  const handleStepChange = (e) => { setIsPlaying(false); setCurrentStep(Number(e.target.value)); };
 
-  // --- RESIZING LOGIC ---
+  // --- RESIZING ---
   const startResizingSidebar = () => setIsResizingSidebar(true);
-  const startResizingBottom = () => setIsResizingBottom(true);
+  const startResizingBottom  = () => setIsResizingBottom(true);
 
   const stopResizing = useCallback(() => {
     setIsResizingSidebar(false);
@@ -63,14 +54,10 @@ function App() {
   }, []);
 
   const handleMouseMove = useCallback((e) => {
-    if (isResizingSidebar) {
-      const newWidth = Math.max(200, Math.min(e.clientX, 600));
-      setSidebarWidth(newWidth);
-    }
+    if (isResizingSidebar) setSidebarWidth(Math.max(200, Math.min(e.clientX, 600)));
     if (isResizingBottom) {
-      const totalHeight = window.innerHeight;
-      const newHeight = Math.max(100, Math.min(totalHeight - e.clientY, totalHeight * 0.6));
-      setBottomHeight(newHeight);
+      const newH = Math.max(100, Math.min(window.innerHeight - e.clientY, window.innerHeight * 0.6));
+      setBottomHeight(newH);
     }
   }, [isResizingSidebar, isResizingBottom]);
 
@@ -85,7 +72,7 @@ function App() {
     };
   }, [isResizingSidebar, isResizingBottom, handleMouseMove, stopResizing]);
 
-  // --- QUBIT LOGIC ---
+  // --- QUBIT / GROUP LOGIC (unchanged from original) ---
   const getSubtreeGroupIds = useCallback((startId) => {
     const ids = new Set([startId]);
     let added = true;
@@ -93,8 +80,7 @@ function App() {
       added = false;
       for (const g of groups) {
         if (g.parentId !== null && ids.has(g.parentId) && !ids.has(g.id)) {
-          ids.add(g.id);
-          added = true;
+          ids.add(g.id); added = true;
         }
       }
     }
@@ -107,9 +93,7 @@ function App() {
     if (selected.type === 'group') {
       const subtree = getSubtreeGroupIds(selected.id);
       return new Set(
-        qubits
-          .filter(q => q.groupId !== null && subtree.includes(q.groupId))
-          .map(q => q.id)
+        qubits.filter(q => q.groupId !== null && subtree.includes(q.groupId)).map(q => q.id)
       );
     }
     return new Set();
@@ -117,16 +101,12 @@ function App() {
 
   const createGroup = useCallback((parentId = null) => {
     const newId = Date.now();
-    const newGroup = { id: newId, name: `Group ${groups.length + 1}`, parentId };
-    setGroups(prev => [...prev, newGroup]);
+    setGroups(prev => [...prev, { id: newId, name: `Group ${groups.length + 1}`, parentId }]);
     setSelected({ type: 'group', id: newId });
   }, [groups.length]);
 
   const moveGroup = useCallback((groupId, newParentId) => {
-    if (newParentId !== null) {
-      const subtree = getSubtreeGroupIds(groupId);
-      if (subtree.includes(newParentId)) return;
-    }
+    if (newParentId !== null && getSubtreeGroupIds(groupId).includes(newParentId)) return;
     setGroups(prev => prev.map(g => g.id === groupId ? { ...g, parentId: newParentId } : g));
   }, [getSubtreeGroupIds]);
 
@@ -136,31 +116,24 @@ function App() {
       q.groupId !== null && subtree.includes(q.groupId) ? { ...q, groupId: null } : q
     ));
     setGroups(prev =>
-      prev
-        .filter(g => g.id !== groupId)
-        .map(g => g.parentId === groupId ? { ...g, parentId: null } : g)
+      prev.filter(g => g.id !== groupId)
+          .map(g => g.parentId === groupId ? { ...g, parentId: null } : g)
     );
     if (selected?.type === 'group' && selected.id === groupId) setSelected(null);
   }, [getSubtreeGroupIds, selected]);
 
   const handleGroupPositionChange = useCallback((groupId, axisIndex, newValue) => {
-    const subtree = getSubtreeGroupIds(groupId);
+    const subtree       = getSubtreeGroupIds(groupId);
     const subtreeQubits = qubits.filter(q => q.groupId !== null && subtree.includes(q.groupId));
     if (subtreeQubits.length === 0) return;
-
-    const oldAvg = subtreeQubits.reduce((sum, q) => {
-      sum[0] += q.position[0] || 0;
-      sum[1] += q.position[1] || 0;
-      sum[2] += q.position[2] || 0;
-      return sum;
-    }, [0, 0, 0]).map(v => v / subtreeQubits.length);
-
+    const oldAvg = subtreeQubits.reduce(
+      (s, q) => { s[0] += q.position[0]||0; s[1] += q.position[1]||0; s[2] += q.position[2]||0; return s; },
+      [0,0,0]
+    ).map(v => v / subtreeQubits.length);
     const delta = (parseFloat(newValue) || 0) - oldAvg[axisIndex];
-
     setQubits(prev => prev.map(q => {
       if (q.groupId !== null && subtree.includes(q.groupId)) {
-        const newPos = [...q.position];
-        newPos[axisIndex] += delta;
+        const newPos = [...q.position]; newPos[axisIndex] += delta;
         return { ...q, position: newPos };
       }
       return q;
@@ -176,20 +149,27 @@ function App() {
     });
   };
 
-  // Compute final rotations based on circuit AND currentStep
+  // ── STATE VECTOR SIMULATION ───────────────────────────────────────────────
+  // Runs the full 2ⁿ state-vector simulation and attaches Bloch data to each
+  // qubit.  The original `rotation` quaternion is preserved so the Sidebar
+  // inspector can still read and write it unchanged.
   const computedQubits = useMemo(() => {
-    return qubits.map(q => {
-      const row = circuit[q.id] || [];
-      // Slice the gates up to the current time step
-      const activeGates = row.slice(0, currentStep);
-      const finalRot = simulateCircuit(q.rotation, activeGates);
-      return { ...q, rotation: finalRot };
-    });
+    // simulateAllQubits returns [{ direction: Vector3, purity: number }, …]
+    const blochResults = simulateAllQubits(qubits, circuit, currentStep);
+
+    return qubits.map((q, i) => ({
+      ...q,
+      // blochData is read by BlochSphere for the arrow direction and
+      // entanglement colour.  `rotation` (the original quaternion) is kept
+      // intact for the Sidebar controls.
+      blochData: blochResults[i] ?? null,
+    }));
   }, [qubits, circuit, currentStep]);
 
   // --- RENDER ---
   return (
     <div className="app-layout">
+
       {/* 1. Left Sidebar */}
       <div className="sidebar-container" style={{ width: sidebarWidth }}>
         <Sidebar
@@ -199,25 +179,23 @@ function App() {
           onSelect={setSelected}
           onAddQubit={(targetGroupId = null) => {
             const newId = Date.now();
-            let maxX = -2.5;
-            if (qubits.length > 0) {
-               maxX = Math.max(...qubits.map(q => q.position[0]));
-            }
-            const startX = maxX + 2.5;
-
-            const newQubit = {
+            const maxX  = qubits.length > 0 ? Math.max(...qubits.map(q => q.position[0])) : -2.5;
+            setQubits(prev => [...prev, {
               id: newId,
               name: `Qubit ${qubits.length + 1}`,
               rotation: new THREE.Quaternion(),
-              position: [startX, 0, 0],
-              groupId: targetGroupId
-            };
-            setQubits(prev => [...prev, newQubit]);
+              position: [maxX + 2.5, 0, 0],
+              groupId: targetGroupId,
+            }]);
             setSelected({ type: 'qubit', id: newId });
           }}
           onCreateGroup={createGroup}
-          onUpdateQubit={(id, changes) => setQubits(prev => prev.map(q => q.id === id ? { ...q, ...changes } : q))}
-          onUpdateGroup={(id, changes) => setGroups(prev => prev.map(g => g.id === id ? { ...g, ...changes } : g))}
+          onUpdateQubit={(id, changes) =>
+            setQubits(prev => prev.map(q => q.id === id ? { ...q, ...changes } : q))
+          }
+          onUpdateGroup={(id, changes) =>
+            setGroups(prev => prev.map(g => g.id === id ? { ...g, ...changes } : g))
+          }
           onMoveGroup={moveGroup}
           onGroupPositionChange={handleGroupPositionChange}
           onDeleteGroup={handleDeleteGroup}
@@ -228,8 +206,8 @@ function App() {
 
       {/* 2. Main Content */}
       <main className="main-content">
-        
-        {/* Sphere View */}
+
+        {/* Bloch sphere view */}
         <div className="sphere-pane" style={{ height: `calc(100% - ${bottomHeight}px)` }}>
           <BlochSphere
             qubits={computedQubits}
@@ -241,37 +219,28 @@ function App() {
 
         <div className="resizer-horizontal" onMouseDown={startResizingBottom} />
 
-        {/* Circuit Pane: Controls + Grid */}
+        {/* Circuit pane */}
         <div className="circuit-pane" style={{ height: bottomHeight }}>
-          
-          {/* CONTROL BAR */}
           <div className="circuit-controls">
             <button className="control-btn" onClick={handlePlayPause}>
-              {isPlaying ? "⏸ Pause" : "▶ Play"}
+              {isPlaying ? '⏸ Pause' : '▶ Play'}
             </button>
-            <button className="control-btn" onClick={handleStop}>
-              ⏹ Stop
-            </button>
+            <button className="control-btn" onClick={handleStop}>⏹ Stop</button>
             <div className="scrubber-container">
               <span className="step-label">Step: {currentStep} / {MAX_STEPS}</span>
-              <input 
-                type="range" 
-                min="0" 
-                max={MAX_STEPS} 
-                value={currentStep} 
-                onChange={handleStepChange}
-                className="scrubber-slider"
+              <input
+                type="range" min="0" max={MAX_STEPS} value={currentStep}
+                onChange={handleStepChange} className="scrubber-slider"
               />
             </div>
           </div>
 
-          {/* GRID */}
           <div className="circuit-grid-wrapper">
-             <CircuitGrid 
-              qubits={qubits} 
-              circuit={circuit} 
+            <CircuitGrid
+              qubits={qubits}
+              circuit={circuit}
               onGateChange={handleGateChange}
-              currentStep={currentStep} // Pass step for highlighting
+              currentStep={currentStep}
             />
           </div>
         </div>
