@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import Sidebar from './components/Sidebar/Sidebar';
 import BlochSphere from './components/BlochSphere/BlochSphere';
 import CircuitGrid from './components/Circuit/CircuitGrid';
-import { simulateCircuit } from './utils/quantum';
+import { simulateCircuitStateVector } from './utils/quantum';
 import './App.css';
 
 function App() {
@@ -176,15 +176,11 @@ function App() {
     });
   };
 
-  // Compute final rotations based on circuit AND currentStep
+  // Compute Bloch vectors for all qubits via state vector simulation.
+  // This handles single-qubit gates AND entangling CNOT gates correctly.
   const computedQubits = useMemo(() => {
-    return qubits.map(q => {
-      const row = circuit[q.id] || [];
-      // Slice the gates up to the current time step
-      const activeGates = row.slice(0, currentStep);
-      const finalRot = simulateCircuit(q.rotation, activeGates);
-      return { ...q, rotation: finalRot };
-    });
+    const blochVectors = simulateCircuitStateVector(qubits, circuit, currentStep);
+    return qubits.map((q, i) => ({ ...q, blochVector: blochVectors[i] }));
   }, [qubits, circuit, currentStep]);
 
   // --- RENDER ---

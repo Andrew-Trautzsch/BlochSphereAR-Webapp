@@ -5,11 +5,37 @@ import * as THREE from "three";
 import './BlochSphere.css';
 
 // Renders ONE sphere.
-function SingleQubit({ rotation, position, label, isSelected, onClick }) {
-  const direction = useMemo(() => {
+// `blochVector` — { x, y, z, length } from the state-vector engine.
+//   length = 1  → pure state (arrow on sphere surface, bright yellow)
+//   length ≈ 0  → maximally mixed / entangled (very short arrow, desaturated)
+// Falls back to the quaternion `rotation` when `blochVector` is absent.
+function SingleQubit({ rotation, blochVector, position, label, isSelected, onClick }) {
+  const { direction, arrowLength, arrowColor } = useMemo(() => {
+    if (blochVector) {
+      const raw = new THREE.Vector3(blochVector.x, blochVector.y, blochVector.z);
+      const purity = blochVector.length; // [0, 1]
+
+      // Keep arrow pointing in the right direction even for mixed states;
+      // use the raw length so it visually shrinks toward the origin.
+      const dir = raw.lengthSq() > 1e-8 ? raw.clone().normalize() : new THREE.Vector3(0, 1, 0);
+      const len = Math.max(0.05, purity); // never fully vanish
+
+      // Colour: bright yellow for pure, desaturated grey-yellow for mixed
+      const bright = Math.round(255 * purity);
+      const dim    = Math.round(128 * (1 - purity));
+      const color  = (bright << 16) | (bright << 8) | dim; // rgb(p,p,dim)
+
+      return { direction: dir, arrowLength: len, arrowColor: color };
+    }
+
+    // Legacy quaternion path (manual rotation, no circuit gates applied)
     const base = new THREE.Vector3(0, 1, 0);
-    return base.applyQuaternion(rotation);
-  }, [rotation]);
+    return {
+      direction:   base.applyQuaternion(rotation),
+      arrowLength: 1,
+      arrowColor:  0xffff00,
+    };
+  }, [rotation, blochVector]);
 
   return (
     <group position={position} onClick={(e) => { e.stopPropagation(); onClick(); }}>
@@ -36,7 +62,7 @@ function SingleQubit({ rotation, position, label, isSelected, onClick }) {
       {/* Axes & Arrow */}
       <axesHelper args={[1]} />
       <axesHelper args={[-1]} />
-      <arrowHelper args={[direction, new THREE.Vector3(0, 0, 0), 1, 0xffff00]} />
+      <arrowHelper args={[direction, new THREE.Vector3(0, 0, 0), arrowLength, arrowColor]} />
 
       {/* Labels */}
       <Html position={[0, -1.5, 0]} center>
@@ -64,6 +90,7 @@ export default function BlochSphere({ qubits, selected, highlightedIds, onSelect
           <SingleQubit
             key={qubit.id}
             rotation={qubit.rotation}
+            blochVector={qubit.blochVector}
             position={qubit.position}
             label={qubit.name}
             isSelected={highlightedIds.has(qubit.id)}
