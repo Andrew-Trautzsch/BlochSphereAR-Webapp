@@ -10,7 +10,7 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
   // Dimensions (Must match CSS)
   const cellWidth = 40; 
   const rowHeight = 50; 
-  const labelWidth = 100; // FIX: Width of the sticky label column
+  const labelWidth = 90; // FIX: Width of the sticky label column
 
   // --- HELPER: Draw SVG Lines for CNOT gates ---
   const renderConnections = () => {
@@ -37,7 +37,7 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
         const maxRow = Math.max(...allIndices);
 
         // FIX: Add labelWidth to x calculation so lines align with the wire track
-        const x = labelWidth + (col * cellWidth) + halfCell -1;
+        const x = labelWidth + (col * cellWidth) + halfCell;
         
         const y1 = minRow * rowHeight + halfRow;
         const y2 = maxRow * rowHeight + halfRow;

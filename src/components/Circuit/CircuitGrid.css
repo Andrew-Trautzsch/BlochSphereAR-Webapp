@@ -74,8 +74,8 @@
 }
 
 .qubit-label-cell {
-  width: 100px;
-  min-width: 100px;
+  width: 90px;
+  min-width: 90px;
   display: flex;
   align-items: center;
   padding-left: 10px;
