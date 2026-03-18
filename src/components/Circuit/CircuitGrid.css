@@ -2,7 +2,6 @@
   box-sizing: border-box;
 }
 
-/* ... Keep your existing container styles ... */
 .circuit-container-scroll {
   width: 100%;
   height: 100%;
@@ -32,11 +31,11 @@
 
 .time-ruler {
   display: flex;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .ruler-tick {
-  width:40px; 
+  width: 40px;
   text-align: center;
   font-size: 0.7rem;
   color: #666;
@@ -51,20 +50,19 @@
 
 .circuit-body {
   flex-grow: 1;
-  overflow: auto; 
-  position: relative; /* Crucial for SVG positioning */
+  overflow: auto;
+  position: relative;
 }
 
-/* --- NEW: SVG OVERLAY --- */
+/* SVG overlay for two-qubit gate connection lines */
 .circuit-connections-overlay {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  min-width: 1000px; /* Ensures lines draw even if scrolled off-screen */
+  min-width: 1000px;
   height: 100%;
-  pointer-events: none; /* Let clicks pass through to the buttons */
-  z-index: 5; /* Above wire lines, below gates */
+  pointer-events: none;
+  z-index: 5;
 }
 
 .circuit-row {
@@ -83,9 +81,9 @@
   font-family: monospace;
   background: #1e1e1e;
   border-right: 1px solid #333;
-  position: sticky; 
+  position: sticky;
   left: 0;
-  z-index: 10; /* Above SVG lines */
+  z-index: 10;
 }
 
 .wire-track {
@@ -118,13 +116,13 @@
   z-index: 1;
 }
 
-/* --- GATE BOX STYLES --- */
+/* ── Gate box base ── */
 .gate-box {
   width: 30px;
   height: 30px;
   background: #007bff;
   color: white;
-  z-index: 6; /* Above SVG lines */
+  z-index: 6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,12 +132,17 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.gate-H { background: #e91e63; } /* Pink */
-.gate-X, .gate-Y, .gate-Z { background: #00bcd4; } /* Cyan */
+/* Single-qubit gate colours */
+.gate-H              { background: #e91e63; }
+.gate-X,
+.gate-Y,
+.gate-Z              { background: #00bcd4; }
+.gate-S,
+.gate-T,
+.gate-S_DAG,
+.gate-T_DAG          { background: #ff9800; }
 
-/* --- NEW: CONTROL & TARGET STYLES --- */
-
-/* The Control Dot */
+/* ── CNOT ── */
 .gate-box.gate-control {
   width: 12px;
   height: 12px;
@@ -148,14 +151,52 @@
   box-shadow: none;
 }
 
-/* The Target Cross */
 .gate-box.gate-target {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: #222; /* Dark background to cover the wire behind it */
+  background-color: #222;
   border: 2px solid #007bff;
   color: #007bff;
   font-size: 1.4rem;
   line-height: 24px;
+}
+
+/* ── CZ gate (purple) ── */
+.gate-box.gate-cz-control {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #9c27b0;
+  box-shadow: none;
+}
+
+.gate-box.gate-cz-target {
+  width: 28px;
+  height: 28px;
+  background-color: #222;
+  border: 2px solid #9c27b0;
+  color: #9c27b0;
+  font-size: 0.9rem;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+/* ── SWAP gate (teal) ── */
+.gate-box.gate-swap {
+  width: 28px;
+  height: 28px;
+  background-color: #222;
+  border: 2px solid #009688;
+  color: #009688;
+  font-size: 1.3rem;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.empty-message {
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+  text-align: center;
 }

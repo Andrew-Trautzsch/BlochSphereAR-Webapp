@@ -3,27 +3,32 @@ import * as THREE from 'three';
 import Sidebar from './components/Sidebar/Sidebar';
 import BlochSphere from './components/BlochSphere/BlochSphere';
 import CircuitGrid from './components/Circuit/CircuitGrid';
-import { simulateAllQubits } from './utils/quantum';
+import {
+  simulateAllQubits,
+  createBellStateCircuit,
+  createGHZCircuit,
+  createTeleportationCircuit,
+} from './utils/quantum';
 import './App.css';
 
 function App() {
   // --- LAYOUT STATE ---
-  const [sidebarWidth, setSidebarWidth] = useState(360);
-  const [bottomHeight, setBottomHeight] = useState(200);
+  const [sidebarWidth, setSidebarWidth]     = useState(360);
+  const [bottomHeight, setBottomHeight]     = useState(200);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
-  const [isResizingBottom, setIsResizingBottom] = useState(false);
+  const [isResizingBottom,  setIsResizingBottom]  = useState(false);
 
   // --- APP STATE ---
   const [qubits, setQubits] = useState([
     { id: 1, name: 'Qubit 1', rotation: new THREE.Quaternion(), position: [0, 0, 0], groupId: null }
   ]);
-  const [circuit, setCircuit] = useState({});
-  const [groups, setGroups] = useState([]);
+  const [circuit,  setCircuit]  = useState({});
+  const [groups,   setGroups]   = useState([]);
   const [selected, setSelected] = useState(null);
 
   // --- PLAYBACK STATE ---
   const [currentStep, setCurrentStep] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying,   setIsPlaying]   = useState(false);
   const MAX_STEPS = 20;
 
   // --- PLAYBACK ENGINE ---
@@ -40,7 +45,7 @@ function App() {
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  const handlePlayPause  = () => setIsPlaying(!isPlaying);
+  const handlePlayPause  = () => setIsPlaying(p => !p);
   const handleStop       = () => { setIsPlaying(false); setCurrentStep(0); };
   const handleStepChange = (e) => { setIsPlaying(false); setCurrentStep(Number(e.target.value)); };
 
@@ -72,7 +77,7 @@ function App() {
     };
   }, [isResizingSidebar, isResizingBottom, handleMouseMove, stopResizing]);
 
-  // --- QUBIT / GROUP LOGIC (unchanged from original) ---
+  // --- QUBIT / GROUP LOGIC ---
   const getSubtreeGroupIds = useCallback((startId) => {
     const ids = new Set([startId]);
     let added = true;
@@ -149,19 +154,43 @@ function App() {
     });
   };
 
-  // ── STATE VECTOR SIMULATION ───────────────────────────────────────────────
-  // Runs the full 2ⁿ state-vector simulation and attaches Bloch data to each
-  // qubit.  The original `rotation` quaternion is preserved so the Sidebar
-  // inspector can still read and write it unchanged.
-  const computedQubits = useMemo(() => {
-    // simulateAllQubits returns [{ direction: Vector3, purity: number }, …]
-    const blochResults = simulateAllQubits(qubits, circuit, currentStep);
+  // --- CIRCUIT PRESETS ──────────────────────────────────────────────────────
+  // Ensures at least `count` qubits exist, adding them if needed.
+  // Returns the (possibly extended) qubit array synchronously so the
+  // circuit factory can use the correct IDs before the next render.
+  const ensureQubits = (count) => {
+    if (qubits.length >= count) return qubits;
 
+    const extended = [...qubits];
+    for (let i = qubits.length; i < count; i++) {
+      const maxX = extended.length > 0
+        ? Math.max(...extended.map(q => q.position[0]))
+        : -2.5;
+      extended.push({
+        id:       Date.now() + i,
+        name:     `Qubit ${extended.length + 1}`,
+        rotation: new THREE.Quaternion(),
+        position: [maxX + 2.5, 0, 0],
+        groupId:  null,
+      });
+    }
+    setQubits(extended);
+    return extended;
+  };
+
+  const applyPreset = (factory, minQubits) => {
+    const workQubits = ensureQubits(minQubits);
+    const ids        = workQubits.slice(0, minQubits).map(q => q.id);
+    setCircuit(factory(ids));
+    setCurrentStep(0);
+    setIsPlaying(false);
+  };
+
+  // --- STATE VECTOR SIMULATION ---
+  const computedQubits = useMemo(() => {
+    const blochResults = simulateAllQubits(qubits, circuit, currentStep);
     return qubits.map((q, i) => ({
       ...q,
-      // blochData is read by BlochSphere for the arrow direction and
-      // entanglement colour.  `rotation` (the original quaternion) is kept
-      // intact for the Sidebar controls.
       blochData: blochResults[i] ?? null,
     }));
   }, [qubits, circuit, currentStep]);
@@ -222,10 +251,38 @@ function App() {
         {/* Circuit pane */}
         <div className="circuit-pane" style={{ height: bottomHeight }}>
           <div className="circuit-controls">
+
+            {/* Playback */}
             <button className="control-btn" onClick={handlePlayPause}>
               {isPlaying ? '⏸ Pause' : '▶ Play'}
             </button>
             <button className="control-btn" onClick={handleStop}>⏹ Stop</button>
+
+            {/* Circuit presets */}
+            <span className="preset-label">Presets:</span>
+            <button
+              className="control-btn preset-btn preset-bell"
+              title="Φ+ Bell state — H on q0, CNOT(q0→q1). Creates maximally entangled pair."
+              onClick={() => applyPreset(createBellStateCircuit, 2)}
+            >
+              Φ+ Bell
+            </button>
+            <button
+              className="control-btn preset-btn preset-ghz"
+              title="GHZ state — all qubits maximally entangled: (|00…0⟩+|11…1⟩)/√2"
+              onClick={() => applyPreset(createGHZCircuit, Math.max(qubits.length, 3))}
+            >
+              GHZ
+            </button>
+            <button
+              className="control-btn preset-btn preset-teleport"
+              title="Quantum teleportation (unitary portion). q0=input, q1=Alice, q2=Bob."
+              onClick={() => applyPreset(createTeleportationCircuit, 3)}
+            >
+              Teleport
+            </button>
+
+            {/* Step scrubber */}
             <div className="scrubber-container">
               <span className="step-label">Step: {currentStep} / {MAX_STEPS}</span>
               <input

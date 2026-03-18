@@ -1,124 +1,162 @@
 import React from 'react';
 import './CircuitGrid.css';
 
-// Added 'C' (Control) and 'TG' (Target) to the available gates
-const AVAILABLE_GATES = [null, 'H', 'X', 'Y', 'Z', 'S', 'T', 'C', 'TG'];
+// Cycle order when clicking a gate slot
+const AVAILABLE_GATES = [
+  null,
+  'H', 'X', 'Y', 'Z', 'S', 'T',
+  'C', 'TG',           // CNOT: control + target
+  'CZC', 'CZT',        // CZ:   both halves (symmetric)
+  'SWA', 'SWB',        // SWAP: both halves (symmetric)
+];
 
 const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
-  const steps = 20; // Matches App.jsx MAX_STEPS
-  
-  // Dimensions (Must match CSS)
-  const cellWidth = 40; 
-  const rowHeight = 50; 
-  const labelWidth = 90; // FIX: Width of the sticky label column
+  const steps      = 20;   // matches App.jsx MAX_STEPS
+  const cellWidth  = 40;
+  const rowHeight  = 50;
+  const labelWidth = 90;
 
-  // --- HELPER: Draw SVG Lines for CNOT gates ---
+  // ── SVG connection lines for two-qubit gates ───────────────────
   const renderConnections = () => {
-    const connections = [];
+    const lines = [];
     const halfCell = cellWidth / 2;
-    const halfRow = rowHeight / 2;
+    const halfRow  = rowHeight / 2;
 
-    // Iterate through each time step (column)
     for (let col = 0; col < steps; col++) {
-      let controls = [];
-      let targets = [];
+      const cnotCtrl = [], cnotTgt = [];
+      const czA      = [], czB    = [];
+      const swapA    = [], swapB  = [];
 
-      // Find all Controls and Targets in this specific column
       qubits.forEach((q, rowIndex) => {
         const gate = circuit[q.id]?.[col];
-        if (gate === 'C') controls.push(rowIndex); 
-        if (gate === 'TG') targets.push(rowIndex);
+        if (gate === 'C')   cnotCtrl.push(rowIndex);
+        if (gate === 'TG')  cnotTgt.push(rowIndex);
+        if (gate === 'CZC') czA.push(rowIndex);
+        if (gate === 'CZT') czB.push(rowIndex);
+        if (gate === 'SWA') swapA.push(rowIndex);
+        if (gate === 'SWB') swapB.push(rowIndex);
       });
 
-      // If we have both a Control and a Target, draw a line
-      if (controls.length > 0 && targets.length > 0) {
-        const allIndices = [...controls, ...targets];
-        const minRow = Math.min(...allIndices);
-        const maxRow = Math.max(...allIndices);
+      const x = labelWidth + col * cellWidth + halfCell;
 
-        // FIX: Add labelWidth to x calculation so lines align with the wire track
-        const x = labelWidth + (col * cellWidth) + halfCell;
-        
-        const y1 = minRow * rowHeight + halfRow;
-        const y2 = maxRow * rowHeight + halfRow;
+      // CNOT — blue
+      if (cnotCtrl.length > 0 && cnotTgt.length > 0) {
+        const all = [...cnotCtrl, ...cnotTgt];
+        lines.push(
+          <line key={`cnot-${col}`}
+            x1={x} y1={Math.min(...all) * rowHeight + halfRow}
+            x2={x} y2={Math.max(...all) * rowHeight + halfRow}
+            stroke="#007bff" strokeWidth="2"
+          />
+        );
+      }
 
-        connections.push(
-          <line 
-            key={`line-${col}`} 
-            x1={x} y1={y1} 
-            x2={x} y2={y2} 
-            stroke="#007bff" 
-            strokeWidth="2" 
+      // CZ — purple
+      if (czA.length > 0 && czB.length > 0) {
+        const all = [...czA, ...czB];
+        lines.push(
+          <line key={`cz-${col}`}
+            x1={x} y1={Math.min(...all) * rowHeight + halfRow}
+            x2={x} y2={Math.max(...all) * rowHeight + halfRow}
+            stroke="#9c27b0" strokeWidth="2"
+          />
+        );
+      }
+
+      // SWAP — teal
+      if (swapA.length > 0 && swapB.length > 0) {
+        const all = [...swapA, ...swapB];
+        lines.push(
+          <line key={`swap-${col}`}
+            x1={x} y1={Math.min(...all) * rowHeight + halfRow}
+            x2={x} y2={Math.max(...all) * rowHeight + halfRow}
+            stroke="#009688" strokeWidth="2"
           />
         );
       }
     }
-    return connections;
+    return lines;
   };
 
-  // Calculate total width for the SVG so it covers the full scrollable area
-  const totalGridWidth = labelWidth + (steps * cellWidth);
+  const totalGridWidth = labelWidth + steps * cellWidth;
 
   return (
     <div className="circuit-container-scroll">
+
+      {/* ── Header row ── */}
       <div className="circuit-header">
         <span className="header-title">Circuit Editor</span>
         <div className="time-ruler">
           {Array.from({ length: steps }).map((_, i) => (
-            <div 
-              key={i} 
-              className={`ruler-tick ${i === currentStep - 1 ? 'active-step' : ''}`}
-            >
+            <div key={i} className={`ruler-tick ${i === currentStep - 1 ? 'active-step' : ''}`}>
               {i + 1}
             </div>
           ))}
         </div>
       </div>
 
+      {/* ── Scrollable body ── */}
       <div className="circuit-body">
-        {/* SVG OVERLAY FOR CONNECTIONS */}
-        <svg 
-            className="circuit-connections-overlay"
-            style={{ width: `${totalGridWidth}px` }} /* FIX: Ensure SVG scrolls with content */
+
+        {/* SVG overlay for two-qubit connection lines */}
+        <svg
+          className="circuit-connections-overlay"
+          style={{ width: `${totalGridWidth}px` }}
         >
           {renderConnections()}
         </svg>
 
         {qubits.map(qubit => (
           <div key={qubit.id} className="circuit-row">
-            <div className="qubit-label-cell">
-              {qubit.name}
-            </div>
-            
+            <div className="qubit-label-cell">{qubit.name}</div>
+
             <div className="wire-track">
               {Array.from({ length: steps }).map((_, stepIndex) => {
-                const gate = circuit[qubit.id]?.[stepIndex];
+                const gate     = circuit[qubit.id]?.[stepIndex];
                 const isActive = stepIndex === currentStep - 1;
-                
-                // Determine styling based on gate type
+
+                // Derive display properties for each gate token
                 let gateClass = '';
-                let gateLabel = gate;
-                
-                if (gate === 'C') { 
-                    gateClass = 'gate-control'; 
-                    gateLabel = ''; // Dot has no text
-                } else if (gate === 'TG') { 
-                    gateClass = 'gate-target'; 
-                    gateLabel = '+'; // Target is a cross
+                let gateLabel = gate ?? '';
+
+                switch (gate) {
+                  case 'C':
+                    gateClass = 'gate-control';
+                    gateLabel = '';
+                    break;
+                  case 'TG':
+                    gateClass = 'gate-target';
+                    gateLabel = '+';
+                    break;
+                  case 'CZC':
+                    gateClass = 'gate-cz-control';
+                    gateLabel = '';
+                    break;
+                  case 'CZT':
+                    gateClass = 'gate-cz-target';
+                    gateLabel = 'Z';
+                    break;
+                  case 'SWA':
+                  case 'SWB':
+                    gateClass = 'gate-swap';
+                    gateLabel = '×';
+                    break;
+                  default:
+                    break;
                 }
 
                 return (
-                  <div 
-                    key={stepIndex} 
+                  <div
+                    key={stepIndex}
                     className={`gate-slot ${gate ? 'filled' : ''} ${isActive ? 'active-slot' : ''}`}
                     onClick={() => {
-                        const currentIdx = AVAILABLE_GATES.indexOf(gate);
-                        const nextGate = AVAILABLE_GATES[(currentIdx + 1) % AVAILABLE_GATES.length];
-                        onGateChange(qubit.id, stepIndex, nextGate);
+                      const currentIdx = AVAILABLE_GATES.indexOf(gate ?? null);
+                      const nextGate   = AVAILABLE_GATES[(currentIdx + 1) % AVAILABLE_GATES.length];
+                      onGateChange(qubit.id, stepIndex, nextGate);
                     }}
                   >
-                    <div className="wire-line"></div>
-                    
+                    <div className="wire-line" />
+
                     {gate && (
                       <div className={`gate-box ${gateClass} gate-${gate}`}>
                         {gateLabel}
@@ -130,7 +168,7 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
             </div>
           </div>
         ))}
-        
+
         {qubits.length === 0 && (
           <div className="empty-message">No Qubits. Add one from the Sidebar.</div>
         )}

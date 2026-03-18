@@ -134,3 +134,28 @@ html, body, #root {
   overflow: hidden; /* Pass scroll handling to CircuitGrid */
   position: relative;
 }
+
+/* ── Preset buttons ── */
+.preset-label {
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+ 
+.preset-btn {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+ 
+.preset-bell          { border-color: #007bff; color: #5bb3ff; }
+.preset-bell:hover    { background: rgba(0,123,255,0.2); }
+ 
+.preset-ghz           { border-color: #9c27b0; color: #ce93d8; }
+.preset-ghz:hover     { background: rgba(156,39,176,0.2); }
+ 
+.preset-teleport      { border-color: #009688; color: #4db6ac; }
+.preset-teleport:hover{ background: rgba(0,150,136,0.2); }
