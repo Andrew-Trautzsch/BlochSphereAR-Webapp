@@ -5,15 +5,30 @@ import * as THREE from "three";
 import EntanglementLinks from './EntanglementLinks';
 import './BlochSphere.css';
 
+// Human-readable labels for internal gate token names
+const GATE_DISPLAY = {
+  H:     'H',
+  X:     'X',
+  Y:     'Y',
+  Z:     'Z',
+  S:     'S',
+  T:     'T',
+  S_DAG: 'S†',
+  T_DAG: 'T†',
+  C:     '●',    // CNOT control
+  TG:    '⊕',    // CNOT target
+  CZC:   'CZ',   // CZ control
+  CZT:   'CZ',   // CZ target
+  SWA:   '×',    // SWAP
+  SWB:   '×',    // SWAP
+};
+
 /**
  * A small dot sitting at a pole with a "0" or "1" label inside.
- * opacity is driven by the probability of that state (0.15 min so it's
- * always at least faintly visible).
  */
 function PoleDot({ position, label, color, glowColor, opacity }) {
   return (
     <group position={position}>
-      {/* Outer glow ring */}
       <mesh>
         <sphereGeometry args={[0.1, 16, 16]} />
         <meshStandardMaterial
@@ -25,7 +40,6 @@ function PoleDot({ position, label, color, glowColor, opacity }) {
           depthWrite={false}
         />
       </mesh>
-      {/* Solid dot */}
       <mesh>
         <sphereGeometry args={[0.075, 16, 16]} />
         <meshStandardMaterial
@@ -37,7 +51,6 @@ function PoleDot({ position, label, color, glowColor, opacity }) {
           depthWrite={false}
         />
       </mesh>
-      {/* Label rendered via Html so it always faces camera */}
       <Html center>
         <div style={{
           color: 'white',
@@ -57,7 +70,38 @@ function PoleDot({ position, label, color, glowColor, opacity }) {
   );
 }
 
-function SingleQubit({ rotation, blochData, position, label, isSelected, onClick }) {
+/**
+ * Gate label pill rendered at dead center of the sphere.
+ * Uses an Html overlay with a semi-transparent dark pill background
+ * so the arrow always renders on top via Three.js z-ordering.
+ */
+function GatePill({ gateName }) {
+  if (!gateName) return null;
+  const display = GATE_DISPLAY[gateName] ?? gateName;
+
+  return (
+    <Html position={[0, 0, 0]} center zIndexRange={[0, 0]}>
+      <div style={{
+        background: 'rgba(10, 10, 20, 0.72)',
+        border: '1px solid rgba(255,255,255,0.18)',
+        borderRadius: '5px',
+        padding: '2px 6px',
+        color: 'white',
+        fontSize: '11px',
+        fontWeight: 'bold',
+        fontFamily: 'monospace',
+        userSelect: 'none',
+        pointerEvents: 'none',
+        whiteSpace: 'nowrap',
+        letterSpacing: '0.03em',
+      }}>
+        {display}
+      </div>
+    </Html>
+  );
+}
+
+function SingleQubit({ rotation, blochData, position, label, isSelected, onClick, currentGate }) {
   const { direction, purity } = useMemo(() => {
     if (blochData) return blochData;
     return {
@@ -71,7 +115,6 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
     ? (isEntangled ? 0xff6600 : 0xffa500)
     : (isEntangled ? 0xff6600 : 0xffff00);
 
-  // direction.y is the quantum Z axis (THREE.js Y = Bloch Z = |0⟩ pole).
   const bz = direction.y;
   const t  = (bz + 1) / 2;
   const sphereColor = new THREE.Color().lerpColors(
@@ -80,15 +123,12 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
     t
   );
 
-  // Probabilities for pole dot brightness.
-  // Floor of 0.45 ensures the inactive dot is always clearly visible.
-  const p0 = Math.max(0.45, (bz + 1) / 2);   // |0⟩ — top pole
-  const p1 = Math.max(0.45, (1 - bz) / 2);   // |1⟩ — bottom pole
+  const p0 = Math.max(0.45, (bz + 1) / 2);
+  const p1 = Math.max(0.45, (1 - bz) / 2);
 
   return (
     <group position={position} onClick={(e) => { e.stopPropagation(); onClick(); }}>
 
-      {/* Selection highlight ring */}
       {isSelected && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <ringGeometry args={[1.1, 1.15, 32]} />
@@ -96,7 +136,6 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
         </mesh>
       )}
 
-      {/* Solid translucent state-color sphere */}
       <mesh>
         <sphereGeometry args={[1, 32, 32]} />
         <meshStandardMaterial
@@ -110,7 +149,6 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
         />
       </mesh>
 
-      {/* Wireframe overlay */}
       <mesh>
         <sphereGeometry args={[1, 16, 16]} />
         <meshBasicMaterial
@@ -121,31 +159,17 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
         />
       </mesh>
 
-      {/* Axis guides */}
+      {/* Gate pill renders before axes+arrow so arrow draws on top */}
+      <GatePill gateName={currentGate} />
+
       <axesHelper args={[1]} />
 
-      {/* State arrow */}
+      {/* Arrow renders last — always on top of the pill */}
       <arrowHelper args={[direction, new THREE.Vector3(0, 0, 0), 1, arrowColor]} />
 
-      {/* |0⟩ pole dot — top. Brightness = probability of measuring |0⟩. */}
-      <PoleDot
-        position={[0, 1.1, 0]}
-        label="|0⟩"
-        color="#cc2200"
-        glowColor="#ff4422"
-        opacity={p0}
-      />
+      <PoleDot position={[0, 1.1, 0]}  label="0" color="#cc2200" glowColor="#ff4422" opacity={p0} />
+      <PoleDot position={[0, -1.1, 0]} label="1" color="#00cc44" glowColor="#00ff55" opacity={p1} />
 
-      {/* |1⟩ pole dot — bottom. Brightness = probability of measuring |1⟩. */}
-      <PoleDot
-        position={[0, -1.1, 0]}
-        label="|1⟩"
-        color="#00cc44"
-        glowColor="#00ff55"
-        opacity={p1}
-      />
-
-      {/* Qubit label */}
       <Html position={[0, -1.6, 0]} center>
         <div className="label" style={{
           color: isSelected ? '#646cff' : 'white',
@@ -164,7 +188,7 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
   );
 }
 
-export default function BlochSphere({ qubits, selected, highlightedIds, onSelect }) {
+export default function BlochSphere({ qubits, selected, highlightedIds, onSelect, circuit, currentStep }) {
   return (
     <div className="bloch-container">
       <Canvas camera={{ position: [0, 2, 8] }}>
@@ -173,17 +197,25 @@ export default function BlochSphere({ qubits, selected, highlightedIds, onSelect
 
         <EntanglementLinks qubits={qubits} />
 
-        {qubits.map((qubit) => (
-          <SingleQubit
-            key={qubit.id}
-            rotation={qubit.rotation}
-            blochData={qubit.blochData}
-            position={qubit.position}
-            label={qubit.name}
-            isSelected={highlightedIds.has(qubit.id)}
-            onClick={() => onSelect({ type: 'qubit', id: qubit.id })}
-          />
-        ))}
+        {qubits.map((qubit) => {
+          // currentStep is 1-based; circuit columns are 0-based
+          const currentGate = currentStep > 0
+            ? (circuit[qubit.id]?.[currentStep - 1] ?? null)
+            : null;
+
+          return (
+            <SingleQubit
+              key={qubit.id}
+              rotation={qubit.rotation}
+              blochData={qubit.blochData}
+              position={qubit.position}
+              label={qubit.name}
+              isSelected={highlightedIds.has(qubit.id)}
+              onClick={() => onSelect({ type: 'qubit', id: qubit.id })}
+              currentGate={currentGate}
+            />
+          );
+        })}
 
         <OrbitControls makeDefault />
       </Canvas>

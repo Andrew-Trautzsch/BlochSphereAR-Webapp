@@ -154,13 +154,8 @@ function App() {
     });
   };
 
-  // --- CIRCUIT PRESETS ──────────────────────────────────────────────────────
-  // Ensures at least `count` qubits exist, adding them if needed.
-  // Returns the (possibly extended) qubit array synchronously so the
-  // circuit factory can use the correct IDs before the next render.
   const ensureQubits = (count) => {
     if (qubits.length >= count) return qubits;
-
     const extended = [...qubits];
     for (let i = qubits.length; i < count; i++) {
       const maxX = extended.length > 0
@@ -243,6 +238,8 @@ function App() {
             selected={selected}
             highlightedIds={highlightedQubitIds}
             onSelect={setSelected}
+            circuit={circuit}
+            currentStep={currentStep}
           />
         </div>
 
@@ -252,13 +249,11 @@ function App() {
         <div className="circuit-pane" style={{ height: bottomHeight }}>
           <div className="circuit-controls">
 
-            {/* Playback */}
             <button className="control-btn" onClick={handlePlayPause}>
               {isPlaying ? '⏸ Pause' : '▶ Play'}
             </button>
             <button className="control-btn" onClick={handleStop}>⏹ Stop</button>
 
-            {/* Circuit presets */}
             <span className="preset-label">Presets:</span>
             <button
               className="control-btn preset-btn preset-bell"
@@ -282,7 +277,6 @@ function App() {
               Teleport
             </button>
 
-            {/* Step scrubber */}
             <div className="scrubber-container">
               <span className="step-label">Step: {currentStep} / {MAX_STEPS}</span>
               <input
