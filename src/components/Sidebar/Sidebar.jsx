@@ -21,25 +21,15 @@ function getSubtreeGroupIds(startId, allGroups) {
 }
 
 const Folder = ({
-  group,
-  groups,
-  qubits,
-  expanded,
-  toggleExpanded,
-  onSelect,
-  onUpdateQubit,
-  onMoveGroup,
-  depth = 0
+  group, groups, qubits, expanded, toggleExpanded,
+  onSelect, onUpdateQubit, onMoveGroup, depth = 0
 }) => {
-  const childGroups = groups.filter(g => g.parentId === group.id);
+  const childGroups  = groups.filter(g => g.parentId === group.id);
   const directQubits = qubits.filter(q => q.groupId === group.id);
-  const isExpanded = expanded.has(group.id);
+  const isExpanded   = expanded.has(group.id);
 
   return (
-    <div
-      className="folder-container"
-      style={{ paddingLeft: `${depth * 20}px` }}
-    >
+    <div className="folder-container" style={{ paddingLeft: `${depth * 20}px` }}>
       <div
         className="folder-header"
         draggable
@@ -53,10 +43,7 @@ const Folder = ({
           else if (data.type === 'group') onMoveGroup(data.id, group.id);
         }}
       >
-        <span
-          className="toggle"
-          onClick={e => { e.stopPropagation(); toggleExpanded(group.id); }}
-        >
+        <span className="toggle" onClick={e => { e.stopPropagation(); toggleExpanded(group.id); }}>
           {isExpanded ? '▼' : '▶'}
         </span>
         📁 {group.name}
@@ -76,7 +63,6 @@ const Folder = ({
               </li>
             ))}
           </ul>
-
           {childGroups.map(child => (
             <Folder
               key={child.id}
@@ -98,22 +84,16 @@ const Folder = ({
 };
 
 export default function Sidebar({
-  qubits,
-  groups,
-  selected,
-  onSelect,
-  onAddQubit,
-  onCreateGroup,
-  onUpdateQubit,
-  onUpdateGroup,
-  onMoveGroup,
-  onGroupPositionChange,
-  onDeleteGroup
+  qubits, groups, selected, onSelect,
+  onAddQubit, onCreateGroup,
+  onUpdateQubit, onUpdateGroup,
+  onMoveGroup, onGroupPositionChange, onDeleteGroup,
+  savedShapes, onStampShape,
 }) {
   const [activeMenu, setActiveMenu] = useState('default');
-  const [expanded, setExpanded] = useState(new Set());
+  const [expanded,   setExpanded]   = useState(new Set());
 
-  const toggleMenu = (menu) => setActiveMenu(activeMenu === menu ? null : menu);
+  const toggleMenu     = (menu) => setActiveMenu(activeMenu === menu ? null : menu);
   const toggleExpanded = (id) => {
     const newSet = new Set(expanded);
     newSet.has(id) ? newSet.delete(id) : newSet.add(id);
@@ -121,9 +101,9 @@ export default function Sidebar({
   };
 
   const rootGroups = groups.filter(g => g.parentId === null);
-  const ungrouped = qubits.filter(q => q.groupId === null);
+  const ungrouped  = qubits.filter(q => q.groupId === null);
 
-  // ====================== TREE VIEW ======================
+  // ── TREE VIEW (no selection) ──────────────────────────────────
   if (!selected) {
     return (
       <aside className="side-menu">
@@ -162,7 +142,6 @@ export default function Sidebar({
             </ul>
           </div>
 
-          {/* Root folders (now properly indented) */}
           {rootGroups.map(g => (
             <Folder
               key={g.id}
@@ -178,12 +157,46 @@ export default function Sidebar({
             />
           ))}
         </div>
+
+        {/* ── Shapes library ── */}
+        <div className="shapes-section">
+          <div className="shapes-header">
+            <span className="shapes-title">⬡ Saved Shapes</span>
+            <span className="shapes-hint">from Topology mode</span>
+          </div>
+
+          {(!savedShapes || savedShapes.length === 0) ? (
+            <div className="shapes-empty">
+              No shapes saved yet. Switch to Topology mode to design one.
+            </div>
+          ) : (
+            <div className="shapes-list">
+              {savedShapes.map((shape, i) => (
+                <div key={i} className="shape-card">
+                  <div className="shape-card-info">
+                    <span className="shape-card-name">{shape.name}</span>
+                    <span className="shape-card-meta">
+                      {shape.qubits.length} qubits · {shape.edges.length} edges
+                    </span>
+                  </div>
+                  <button
+                    className="shape-stamp-btn"
+                    onClick={() => onStampShape(shape)}
+                    title={`Add ${shape.name} to simulation`}
+                  >
+                    + Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </aside>
     );
   }
 
-  // ====================== INSPECTOR ======================
-  const isQubit = selected.type === 'qubit';
+  // ── INSPECTOR ────────────────────────────────────────────────
+  const isQubit  = selected.type === 'qubit';
   const selQubit = isQubit ? qubits.find(q => q.id === selected.id) : null;
   const selGroup = !isQubit ? groups.find(g => g.id === selected.id) : null;
 
@@ -198,28 +211,37 @@ export default function Sidebar({
       <button className="back-btn" onClick={() => onSelect(null)}>← Back to Register</button>
 
       {isQubit ? (
-        /* ... same inspector as before ... */
         <>
           <div className="inspector-header">
-            <input type="text" value={selQubit.name} onChange={e => onUpdateQubit(selQubit.id, { name: e.target.value })} />
+            <input
+              type="text"
+              value={selQubit.name}
+              onChange={e => onUpdateQubit(selQubit.id, { name: e.target.value })}
+            />
           </div>
 
           <div className="location-panel">
             <label>Position (X, Y, Z)</label>
             <div className="xyz-inputs">
-              {[0,1,2].map(i => (
-                <input key={i} type="number" step="0.5" value={selQubit.position[i]} onChange={e => {
-                  const newPos = [...selQubit.position];
-                  newPos[i] = parseFloat(e.target.value) || 0;
-                  onUpdateQubit(selQubit.id, { position: newPos });
-                }} />
+              {[0, 1, 2].map(i => (
+                <input key={i} type="number" step="0.5"
+                  value={selQubit.position[i]}
+                  onChange={e => {
+                    const newPos = [...selQubit.position];
+                    newPos[i] = parseFloat(e.target.value) || 0;
+                    onUpdateQubit(selQubit.id, { position: newPos });
+                  }}
+                />
               ))}
             </div>
           </div>
 
           <div className="group-assign">
             <label>Move to Group</label>
-            <select value={selQubit.groupId || ''} onChange={e => onUpdateQubit(selQubit.id, { groupId: e.target.value ? parseInt(e.target.value) : null })}>
+            <select
+              value={selQubit.groupId || ''}
+              onChange={e => onUpdateQubit(selQubit.id, { groupId: e.target.value ? parseInt(e.target.value) : null })}
+            >
               <option value="">Ungrouped</option>
               {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
@@ -238,29 +260,36 @@ export default function Sidebar({
           </Accordion>
         </>
       ) : (
-        /* ... same group inspector ... */
         <>
           <div className="inspector-header">
-            <input type="text" value={selGroup.name} onChange={e => onUpdateGroup(selGroup.id, { name: e.target.value })} />
+            <input
+              type="text"
+              value={selGroup.name}
+              onChange={e => onUpdateGroup(selGroup.id, { name: e.target.value })}
+            />
           </div>
 
           <div className="location-panel">
             <label>Group Position (moves entire subtree)</label>
             <div className="xyz-inputs">
-              {[0,1,2].map(i => (
+              {[0, 1, 2].map(i => (
                 <input
-                  key={i}
-                  type="number"
-                  step="0.5"
-                  value={subtreeQubits.length ? (subtreeQubits.reduce((s, q) => s + (q.position[i] || 0), 0) / subtreeQubits.length).toFixed(2) : '0.00'}
+                  key={i} type="number" step="0.5"
+                  value={subtreeQubits.length
+                    ? (subtreeQubits.reduce((s, q) => s + (q.position[i] || 0), 0) / subtreeQubits.length).toFixed(2)
+                    : '0.00'}
                   onChange={e => onGroupPositionChange(selGroup.id, i, e.target.value)}
                 />
               ))}
             </div>
           </div>
 
-          <button onClick={() => onCreateGroup(selected.id)} style={{ margin: '10px 0' }}>+ New Subfolder</button>
-          <button onClick={() => onAddQubit(selected.id)} style={{ margin: '0 0 10px 0' }}>+ Add Qubit here</button>
+          <button onClick={() => onCreateGroup(selected.id)} style={{ margin: '10px 0' }}>
+            + New Subfolder
+          </button>
+          <button onClick={() => onAddQubit(selected.id)} style={{ margin: '0 0 10px 0' }}>
+            + Add Qubit here
+          </button>
 
           <p style={{ fontSize: '0.85rem', color: '#aaa' }}>
             Members ({subtreeQubits.length}): {subtreeQubits.map(q => q.name).join(', ') || '—'}

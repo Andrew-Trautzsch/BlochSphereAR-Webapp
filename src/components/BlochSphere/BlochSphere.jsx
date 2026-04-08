@@ -3,6 +3,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import EntanglementLinks from './EntanglementLinks';
+import TopologyLinks from './TopologyLinks';
 import './BlochSphere.css';
 
 const TRAIL_STEPS      = 5;
@@ -10,8 +11,6 @@ const SLERP_SEGMENTS   = 24;
 const TRAIL_COLOR      = '#00cfff';
 const TRAIL_OPACITY    = 0.7;
 const TRAIL_RADIUS     = 0.018;
-// How long (ms) a direction must be stable before it's committed to history.
-// Discrete gate clicks stabilize instantly; slider drags settle after this delay.
 const SETTLE_DELAY_MS  = 120;
 
 const GATE_DISPLAY = {
@@ -31,13 +30,9 @@ function slerpArc(from, to, segments) {
   return points;
 }
 
-// ---------------------------------------------------------------------------
-// ArrowTrail
-// ---------------------------------------------------------------------------
 function ArrowTrail({ trailDirs }) {
   const geometry = useMemo(() => {
     if (trailDirs.length < 2) return null;
-
     const allPoints = [];
     for (let i = 0; i < trailDirs.length - 1; i++) {
       const seg = slerpArc(trailDirs[i], trailDirs[i + 1], SLERP_SEGMENTS);
@@ -45,7 +40,6 @@ function ArrowTrail({ trailDirs }) {
       allPoints.push(...seg);
     }
     if (allPoints.length < 2) return null;
-
     const curve = new THREE.CatmullRomCurve3(allPoints);
     return new THREE.TubeGeometry(curve, allPoints.length * 2, TRAIL_RADIUS, 6, false);
   }, [trailDirs]);
@@ -68,9 +62,6 @@ function ArrowTrail({ trailDirs }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// PoleDot
-// ---------------------------------------------------------------------------
 function PoleDot({ position, label, color, glowColor, opacity }) {
   return (
     <group position={position}>
@@ -101,9 +92,6 @@ function PoleDot({ position, label, color, glowColor, opacity }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// GatePill
-// ---------------------------------------------------------------------------
 function GatePill({ gateName }) {
   if (!gateName) return null;
   const display = GATE_DISPLAY[gateName] ?? gateName;
@@ -121,45 +109,28 @@ function GatePill({ gateName }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// SingleQubit
-// ---------------------------------------------------------------------------
 function SingleQubit({ rotation, blochData, position, label, isSelected, onClick, currentGate }) {
   const { direction, purity } = useMemo(() => {
     if (blochData) return blochData;
     return { direction: new THREE.Vector3(0, 1, 0).applyQuaternion(rotation), purity: 1 };
   }, [rotation, blochData]);
 
-  // trailRef holds committed history: Vector3[] oldest → newest.
-  // Initialised with the current direction so the trail starts immediately
-  // on first render with no delay.
   const trailRef    = useRef(null);
-  const pendingRef  = useRef(null); // { dir, timestamp }
+  const pendingRef  = useRef(null);
   const timerRef    = useRef(null);
 
-  // Initialise history on first render
   if (trailRef.current === null) {
     trailRef.current = [direction.clone()];
   }
 
-  // Force a re-render when the trail commits, without React state on every frame
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
 
   useEffect(() => {
     const last = trailRef.current[trailRef.current.length - 1];
-
-    // No meaningful movement — nothing to do
     if (direction.distanceTo(last) < 1e-4) return;
-
-    // Cancel any previously scheduled commit
     if (timerRef.current) clearTimeout(timerRef.current);
-
-    // Record the incoming direction as pending
     pendingRef.current = direction.clone();
-
-    // Commit after the settle delay
     timerRef.current = setTimeout(() => {
-      const stillLast = trailRef.current[trailRef.current.current - 1];
       trailRef.current = [
         ...trailRef.current.slice(-TRAIL_STEPS),
         pendingRef.current,
@@ -167,10 +138,7 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
       pendingRef.current = null;
       forceUpdate();
     }, SETTLE_DELAY_MS);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [direction]);
 
   const trailDirs = trailRef.current;
@@ -189,14 +157,12 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
 
   return (
     <group position={position} onClick={(e) => { e.stopPropagation(); onClick(); }}>
-
       {isSelected && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <ringGeometry args={[1.1, 1.15, 32]} />
           <meshBasicMaterial color="#646cff" side={THREE.DoubleSide} />
         </mesh>
       )}
-
       <mesh>
         <sphereGeometry args={[1, 32, 32]} />
         <meshStandardMaterial
@@ -205,7 +171,6 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
           side={THREE.DoubleSide} depthWrite={false}
         />
       </mesh>
-
       <mesh>
         <sphereGeometry args={[1, 16, 16]} />
         <meshBasicMaterial
@@ -213,16 +178,13 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
           wireframe transparent opacity={0.25}
         />
       </mesh>
-
       <ArrowTrail trailDirs={trailDirs} />
       <GatePill gateName={currentGate} />
       <axesHelper args={[1]} />
       <axesHelper args={[-1]} />
       <arrowHelper args={[direction, new THREE.Vector3(0, 0, 0), 1, arrowColor]} />
-
       <PoleDot position={[0,  1.1, 0]} label="0" color="#dfa093" glowColor="#ff4422" opacity={p0} />
       <PoleDot position={[0, -1.1, 0]} label="1" color="#00cc44" glowColor="#00ff55" opacity={p1} />
-
       <Html position={[0, -1.6, 0]} center>
         <div className="label" style={{
           color: isSelected ? '#646cff' : 'white',
@@ -239,16 +201,17 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
   );
 }
 
-// ---------------------------------------------------------------------------
-// BlochSphere
-// ---------------------------------------------------------------------------
-export default function BlochSphere({ qubits, selected, highlightedIds, onSelect, circuit, currentStep }) {
+export default function BlochSphere({ qubits, selected, highlightedIds, onSelect, circuit, currentStep, edges }) {
   return (
     <div className="bloch-container">
       <Canvas camera={{ position: [0, 2, 8] }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
 
+        {/* Topology wiring — faint blue static lines */}
+        <TopologyLinks qubits={qubits} edges={edges} />
+
+        {/* Entanglement — orange animated tubes */}
         <EntanglementLinks qubits={qubits} />
 
         {qubits.map((qubit) => {

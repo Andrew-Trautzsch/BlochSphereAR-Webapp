@@ -1,22 +1,48 @@
 import React from 'react';
 import './CircuitGrid.css';
 
-// Cycle order when clicking a gate slot
 const AVAILABLE_GATES = [
   null,
   'H', 'X', 'Y', 'Z', 'S', 'T',
-  'C', 'TG',           // CNOT: control + target
-  'CZC', 'CZT',        // CZ:   both halves (symmetric)
-  'SWA', 'SWB',        // SWAP: both halves (symmetric)
+  'C', 'TG',
+  'CZC', 'CZT',
+  'SWA', 'SWB',
 ];
 
-const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
-  const steps      = 20;   // matches App.jsx MAX_STEPS
+// Two-qubit gate tokens
+const TWO_QUBIT_GATES = new Set(['C', 'TG', 'CZC', 'CZT', 'SWA', 'SWB']);
+
+// Partner token map
+const PARTNER_MAP = {
+  'C': 'TG', 'TG': 'C',
+  'CZC': 'CZT', 'CZT': 'CZC',
+  'SWA': 'SWB', 'SWB': 'SWA',
+};
+
+const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep, edgeSet }) => {
+  const steps      = 20;
   const cellWidth  = 40;
   const rowHeight  = 50;
   const labelWidth = 90;
 
-  // ── SVG connection lines for two-qubit gates ───────────────────
+  // For a given two-qubit gate at (qubitId, col), find the partner qubit id
+  const findPartnerQubitId = (qubitId, col, gate) => {
+    const partnerToken = PARTNER_MAP[gate];
+    if (!partnerToken) return null;
+    const partner = qubits.find(q => q.id !== qubitId && circuit[q.id]?.[col] === partnerToken);
+    return partner?.id ?? null;
+  };
+
+  // Check if a two-qubit gate placement is invalid given the topology
+  const isTopologyViolation = (qubitId, col, gate) => {
+    if (!edgeSet) return false; // No topology defined → no constraints
+    if (!TWO_QUBIT_GATES.has(gate)) return false;
+    const partnerId = findPartnerQubitId(qubitId, col, gate);
+    if (!partnerId) return false; // Partner not yet placed, don't warn yet
+    return !edgeSet.has(`${qubitId}-${partnerId}`);
+  };
+
+  // ── SVG connection lines ──
   const renderConnections = () => {
     const lines = [];
     const halfCell = cellWidth / 2;
@@ -24,8 +50,8 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
 
     for (let col = 0; col < steps; col++) {
       const cnotCtrl = [], cnotTgt = [];
-      const czA      = [], czB    = [];
-      const swapA    = [], swapB  = [];
+      const czA = [],      czB    = [];
+      const swapA = [],    swapB  = [];
 
       qubits.forEach((q, rowIndex) => {
         const gate = circuit[q.id]?.[col];
@@ -39,38 +65,43 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
 
       const x = labelWidth + col * cellWidth + halfCell;
 
-      // CNOT — blue
+      // Check topology violation for this column's pairs
+      const cnotViolation = edgeSet && cnotCtrl.length > 0 && cnotTgt.length > 0 &&
+        !edgeSet.has(`${qubits[cnotCtrl[0]]?.id}-${qubits[cnotTgt[0]]?.id}`);
+      const czViolation = edgeSet && czA.length > 0 && czB.length > 0 &&
+        !edgeSet.has(`${qubits[czA[0]]?.id}-${qubits[czB[0]]?.id}`);
+      const swapViolation = edgeSet && swapA.length > 0 && swapB.length > 0 &&
+        !edgeSet.has(`${qubits[swapA[0]]?.id}-${qubits[swapB[0]]?.id}`);
+
       if (cnotCtrl.length > 0 && cnotTgt.length > 0) {
         const all = [...cnotCtrl, ...cnotTgt];
         lines.push(
           <line key={`cnot-${col}`}
             x1={x} y1={Math.min(...all) * rowHeight + halfRow}
             x2={x} y2={Math.max(...all) * rowHeight + halfRow}
-            stroke="#007bff" strokeWidth="2"
+            stroke={cnotViolation ? '#cc4444' : '#007bff'} strokeWidth="2"
           />
         );
       }
 
-      // CZ — purple
       if (czA.length > 0 && czB.length > 0) {
         const all = [...czA, ...czB];
         lines.push(
           <line key={`cz-${col}`}
             x1={x} y1={Math.min(...all) * rowHeight + halfRow}
             x2={x} y2={Math.max(...all) * rowHeight + halfRow}
-            stroke="#9c27b0" strokeWidth="2"
+            stroke={czViolation ? '#cc4444' : '#9c27b0'} strokeWidth="2"
           />
         );
       }
 
-      // SWAP — teal
       if (swapA.length > 0 && swapB.length > 0) {
         const all = [...swapA, ...swapB];
         lines.push(
           <line key={`swap-${col}`}
             x1={x} y1={Math.min(...all) * rowHeight + halfRow}
             x2={x} y2={Math.max(...all) * rowHeight + halfRow}
-            stroke="#009688" strokeWidth="2"
+            stroke={swapViolation ? '#cc4444' : '#009688'} strokeWidth="2"
           />
         );
       }
@@ -83,9 +114,14 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
   return (
     <div className="circuit-container-scroll">
 
-      {/* ── Header row ── */}
+      {/* Header */}
       <div className="circuit-header">
-        <span className="header-title">Circuit Editor</span>
+        <span className="header-title">
+          Circuit Editor
+          {edgeSet && (
+            <span className="topo-active-badge" title="Topology constraints active">⬡</span>
+          )}
+        </span>
         <div className="time-ruler">
           {Array.from({ length: steps }).map((_, i) => (
             <div key={i} className={`ruler-tick ${i === currentStep - 1 ? 'active-step' : ''}`}>
@@ -95,10 +131,8 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
         </div>
       </div>
 
-      {/* ── Scrollable body ── */}
+      {/* Scrollable body */}
       <div className="circuit-body">
-
-        {/* SVG overlay for two-qubit connection lines */}
         <svg
           className="circuit-connections-overlay"
           style={{ width: `${totalGridWidth}px` }}
@@ -114,41 +148,30 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
               {Array.from({ length: steps }).map((_, stepIndex) => {
                 const gate     = circuit[qubit.id]?.[stepIndex];
                 const isActive = stepIndex === currentStep - 1;
+                const violation = gate ? isTopologyViolation(qubit.id, stepIndex, gate) : false;
 
-                // Derive display properties for each gate token
                 let gateClass = '';
                 let gateLabel = gate ?? '';
 
                 switch (gate) {
                   case 'C':
-                    gateClass = 'gate-control';
-                    gateLabel = '';
-                    break;
+                    gateClass = 'gate-control'; gateLabel = ''; break;
                   case 'TG':
-                    gateClass = 'gate-target';
-                    gateLabel = '+';
-                    break;
+                    gateClass = 'gate-target';  gateLabel = '+'; break;
                   case 'CZC':
-                    gateClass = 'gate-cz-control';
-                    gateLabel = '';
-                    break;
+                    gateClass = 'gate-cz-control'; gateLabel = ''; break;
                   case 'CZT':
-                    gateClass = 'gate-cz-target';
-                    gateLabel = 'Z';
-                    break;
-                  case 'SWA':
-                  case 'SWB':
-                    gateClass = 'gate-swap';
-                    gateLabel = '×';
-                    break;
-                  default:
-                    break;
+                    gateClass = 'gate-cz-target';  gateLabel = 'Z'; break;
+                  case 'SWA': case 'SWB':
+                    gateClass = 'gate-swap'; gateLabel = '×'; break;
+                  default: break;
                 }
 
                 return (
                   <div
                     key={stepIndex}
                     className={`gate-slot ${gate ? 'filled' : ''} ${isActive ? 'active-slot' : ''}`}
+                    title={violation ? '⚠ No topology edge between these qubits' : undefined}
                     onClick={() => {
                       const currentIdx = AVAILABLE_GATES.indexOf(gate ?? null);
                       const nextGate   = AVAILABLE_GATES[(currentIdx + 1) % AVAILABLE_GATES.length];
@@ -156,10 +179,10 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep }) => {
                     }}
                   >
                     <div className="wire-line" />
-
                     {gate && (
-                      <div className={`gate-box ${gateClass} gate-${gate}`}>
+                      <div className={`gate-box ${gateClass} gate-${gate} ${violation ? 'topo-violation' : ''}`}>
                         {gateLabel}
+                        {violation && <span className="violation-dot" />}
                       </div>
                     )}
                   </div>

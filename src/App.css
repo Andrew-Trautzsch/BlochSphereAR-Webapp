@@ -5,7 +5,7 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #1e1e1e; /* Keep existing dark background */
+  background-color: #1e1e1e;
 }
 
 /* Main Layout Container */
@@ -13,7 +13,7 @@ html, body, #root {
   display: flex;
   width: 100vw;
   height: 100vh;
-  color: #e0e0e0; /* Keep existing text color */
+  color: #e0e0e0;
 }
 
 /* Sidebar Container */
@@ -22,12 +22,12 @@ html, body, #root {
   border-right: 1px solid #333;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  flex-shrink: 0;
   position: relative;
-  overflow: hidden; /* Sidebar internal scrolling is handled by Sidebar.css */
+  overflow: hidden;
 }
 
-/* Vertical Resizer (Sidebar Handle) */
+/* Vertical Resizer */
 .resizer-vertical {
   width: 5px;
   background: #2a2a2a;
@@ -40,10 +40,10 @@ html, body, #root {
 
 .resizer-vertical:hover,
 .resizer-vertical:active {
-  background: #007bff; /* Blue highlight on hover */
+  background: #007bff;
 }
 
-/* Main Content Area (Right Side) */
+/* Main Content Area */
 .main-content {
   flex-grow: 1;
   display: flex;
@@ -52,15 +52,72 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Sphere Pane (Top) */
+/* ── Mode toggle bar ── */
+.mode-toggle-bar {
+  height: 40px;
+  background: #111116;
+  border-bottom: 1px solid #1f1f2e;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #555;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.15s;
+}
+
+.mode-btn:hover {
+  color: #999;
+  border-color: #2a2a3a;
+  background: #1a1a22;
+}
+
+.mode-btn.active {
+  color: #7ab3ff;
+  border-color: #2a4070;
+  background: #0d1520;
+}
+
+.mode-btn-icon {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.mode-topo-info {
+  margin-left: 12px;
+  font-size: 0.72rem;
+  color: #4a7a4a;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  background: #0d1a0d;
+  border: 1px solid #1f3a1f;
+  border-radius: 4px;
+}
+
+/* Sphere Pane */
 .sphere-pane {
   position: relative;
   width: 100%;
-  background-color: #000; /* Dark background for 3D scene */
+  background-color: #000;
   overflow: hidden;
 }
 
-/* Horizontal Resizer (Circuit Handle) */
+/* Horizontal Resizer */
 .resizer-horizontal {
   height: 6px;
   background: #2a2a2a;
@@ -128,10 +185,16 @@ html, body, #root {
   cursor: pointer;
 }
 
-/* Container for the actual grid so it takes remaining space */
 .circuit-grid-wrapper {
   flex-grow: 1;
-  overflow: hidden; /* Pass scroll handling to CircuitGrid */
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Topology pane ── */
+.topology-pane {
+  flex: 1;
+  overflow: hidden;
   position: relative;
 }
 
@@ -142,7 +205,7 @@ html, body, #root {
   margin-left: 6px;
   white-space: nowrap;
 }
- 
+
 .preset-btn {
   font-size: 0.8rem;
   padding: 4px 10px;
@@ -150,12 +213,12 @@ html, body, #root {
   font-weight: 600;
   letter-spacing: 0.02em;
 }
- 
+
 .preset-bell          { border-color: #007bff; color: #5bb3ff; }
 .preset-bell:hover    { background: rgba(0,123,255,0.2); }
- 
+
 .preset-ghz           { border-color: #9c27b0; color: #ce93d8; }
 .preset-ghz:hover     { background: rgba(156,39,176,0.2); }
- 
+
 .preset-teleport      { border-color: #009688; color: #4db6ac; }
 .preset-teleport:hover{ background: rgba(0,150,136,0.2); }

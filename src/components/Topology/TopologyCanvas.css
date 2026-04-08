@@ -1,0 +1,343 @@
+/* ── Root layout ── */
+.topo-canvas-root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0e0e12;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+.topo-toolbar {
+  height: 52px;
+  background: #13131a;
+  border-bottom: 1px solid #1f1f2e;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.topo-tools {
+  display: flex;
+  gap: 4px;
+}
+
+.topo-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid #2a2a3a;
+  border-radius: 6px;
+  color: #666;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.topo-tool-btn:hover {
+  background: #1a1a28;
+  border-color: #3a3a5a;
+  color: #aaa;
+}
+
+.topo-tool-btn.active {
+  background: #0f1a2e;
+  border-color: #3b6fd4;
+  color: #7ab3ff;
+}
+
+.topo-tool-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.topo-tool-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.topo-toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topo-status {
+  font-size: 0.75rem;
+  color: #555;
+  letter-spacing: 0.04em;
+  font-style: italic;
+}
+
+.topo-save-btn {
+  padding: 6px 14px;
+  background: #1a2e1a;
+  border: 1px solid #2d5a2d;
+  border-radius: 6px;
+  color: #6dbf6d;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.15s;
+}
+
+.topo-save-btn:hover {
+  background: #1f3a1f;
+  border-color: #4a8a4a;
+  color: #8fd88f;
+}
+
+/* ── Workspace ── */
+.topo-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Library sidebar ── */
+.topo-library {
+  width: 180px;
+  flex-shrink: 0;
+  background: #0c0c12;
+  border-right: 1px solid #1a1a26;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.topo-library-header {
+  padding: 12px 14px 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #444;
+  border-bottom: 1px solid #1a1a26;
+  flex-shrink: 0;
+}
+
+.topo-library-empty {
+  padding: 16px 14px;
+  font-size: 0.75rem;
+  color: #333;
+  font-style: italic;
+}
+
+.topo-library-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #141420;
+  color: #888;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  width: 100%;
+}
+
+.topo-library-item:hover {
+  background: #111120;
+  color: #bbb;
+}
+
+.topo-library-name {
+  font-size: 0.82rem;
+  color: #aaa;
+}
+
+.topo-library-meta {
+  font-size: 0.68rem;
+  color: #444;
+  letter-spacing: 0.05em;
+}
+
+/* ── SVG canvas ── */
+.topo-svg {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+}
+
+/* Cursor variants */
+.topo-cursor-select   { cursor: default; }
+.topo-cursor-addNode  { cursor: crosshair; }
+.topo-cursor-addEdge  { cursor: crosshair; }
+.topo-cursor-delete   { cursor: not-allowed; }
+
+/* ── Grid dot ── */
+:root {
+  --topo-grid-dot: #1e1e2e;
+}
+
+/* ── Edges ── */
+.topo-edge {
+  stroke: #2a3a5a;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke 0.15s;
+}
+
+.topo-edge-group:hover .topo-edge {
+  stroke: #4a6aaa;
+}
+
+.topo-edge.deletable {
+  stroke: #5a2a2a;
+}
+
+.topo-edge-group:hover .topo-edge.deletable {
+  stroke: #cc4444;
+}
+
+.topo-ghost-edge {
+  stroke: #3b6fd4;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+/* ── Nodes ── */
+.topo-node-circle {
+  fill: #111828;
+  stroke: #2a4a8a;
+  stroke-width: 1.5;
+  transition: fill 0.15s, stroke 0.15s;
+}
+
+.topo-node:hover .topo-node-circle {
+  fill: #162040;
+  stroke: #5a8aee;
+}
+
+.topo-node.edge-start .topo-node-circle {
+  fill: #0d1e3a;
+  stroke: #7ab3ff;
+  stroke-width: 2;
+}
+
+.topo-node.deletable:hover .topo-node-circle {
+  fill: #2a0e0e;
+  stroke: #cc4444;
+}
+
+.topo-node-pulse {
+  fill: none;
+  stroke: #3b6fd4;
+  stroke-width: 1;
+  opacity: 0.4;
+  animation: topo-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes topo-pulse {
+  0%, 100% { r: 30; opacity: 0.4; }
+  50%       { r: 34; opacity: 0.15; }
+}
+
+.topo-node-label {
+  fill: #7ab3ff;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 500;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+
+/* ── Save modal ── */
+.topo-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.topo-modal {
+  background: #13131a;
+  border: 1px solid #2a2a40;
+  border-radius: 10px;
+  padding: 24px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.topo-modal-title {
+  font-size: 0.9rem;
+  color: #ccc;
+  letter-spacing: 0.04em;
+}
+
+.topo-modal-input {
+  padding: 9px 12px;
+  background: #0e0e18;
+  border: 1px solid #2a2a40;
+  border-radius: 6px;
+  color: #ddd;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.topo-modal-input:focus {
+  border-color: #3b6fd4;
+}
+
+.topo-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.topo-modal-cancel {
+  padding: 7px 16px;
+  background: transparent;
+  border: 1px solid #2a2a40;
+  border-radius: 6px;
+  color: #666;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.topo-modal-cancel:hover {
+  border-color: #3a3a5a;
+  color: #999;
+}
+
+.topo-modal-confirm {
+  padding: 7px 16px;
+  background: #0f1a2e;
+  border: 1px solid #3b6fd4;
+  border-radius: 6px;
+  color: #7ab3ff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.topo-modal-confirm:hover {
+  background: #162040;
+  color: #aad0ff;
+}

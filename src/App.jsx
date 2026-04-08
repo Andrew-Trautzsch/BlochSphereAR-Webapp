@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import Sidebar from './components/Sidebar/Sidebar';
 import BlochSphere from './components/BlochSphere/BlochSphere';
 import CircuitGrid from './components/Circuit/CircuitGrid';
+import TopologyCanvas from './components/Topology/TopologyCanvas';
 import {
   simulateAllQubits,
   createBellStateCircuit,
@@ -11,27 +12,41 @@ import {
 } from './utils/quantum';
 import './App.css';
 
+// Scale factor: topology canvas pixels → 3D world units
+// Grid size is 40px; dividing by 40 maps one grid cell to 1 world unit.
+const TOPO_TO_3D = 1 / 40;
+
 function App() {
   // --- LAYOUT STATE ---
-  const [sidebarWidth, setSidebarWidth]     = useState(360);
-  const [bottomHeight, setBottomHeight]     = useState(200);
+  const [sidebarWidth, setSidebarWidth]           = useState(360);
+  const [bottomHeight, setBottomHeight]           = useState(200);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isResizingBottom,  setIsResizingBottom]  = useState(false);
 
-  // --- APP STATE ---
-  const [qubits, setQubits] = useState([
-    { id: 1, name: 'Qubit 1', rotation: new THREE.Quaternion(), position: [0, 0, 0], groupId: null }
+  // --- MODE ---
+  const [mode, setMode] = useState('simulate'); // 'simulate' | 'topology'
+
+  // --- SIMULATION STATE ---
+  const [qubits,   setQubits]   = useState([
+    { id: 1, name: 'Qubit 1', rotation: new THREE.Quaternion(), position: [0, 0, 0], groupId: null, topoPos: [120, 120] }
   ]);
   const [circuit,  setCircuit]  = useState({});
   const [groups,   setGroups]   = useState([]);
   const [selected, setSelected] = useState(null);
 
-  // --- PLAYBACK STATE ---
+  // Simulation-side topology edges (populated when shapes are stamped)
+  const [simEdges, setSimEdges] = useState([]);
+
+  // --- TOPOLOGY CANVAS STATE (design tool, completely independent) ---
+  const [topoQubits,  setTopoQubits]  = useState([]);
+  const [topoEdges,   setTopoEdges]   = useState([]);
+  const [savedShapes, setSavedShapes] = useState([]);
+
+  // --- PLAYBACK ---
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying,   setIsPlaying]   = useState(false);
   const MAX_STEPS = 20;
 
-  // --- PLAYBACK ENGINE ---
   useEffect(() => {
     let interval;
     if (isPlaying) {
@@ -77,7 +92,7 @@ function App() {
     };
   }, [isResizingSidebar, isResizingBottom, handleMouseMove, stopResizing]);
 
-  // --- QUBIT / GROUP LOGIC ---
+  // --- GROUP UTILITIES ---
   const getSubtreeGroupIds = useCallback((startId) => {
     const ids = new Set([startId]);
     let added = true;
@@ -145,7 +160,7 @@ function App() {
     }));
   }, [qubits, getSubtreeGroupIds]);
 
-  // --- CIRCUIT LOGIC ---
+  // --- CIRCUIT ---
   const handleGateChange = (qubitId, stepIndex, gateName) => {
     setCircuit(prev => {
       const row = prev[qubitId] ? [...prev[qubitId]] : [];
@@ -158,15 +173,11 @@ function App() {
     if (qubits.length >= count) return qubits;
     const extended = [...qubits];
     for (let i = qubits.length; i < count; i++) {
-      const maxX = extended.length > 0
-        ? Math.max(...extended.map(q => q.position[0]))
-        : -2.5;
+      const maxX = extended.length > 0 ? Math.max(...extended.map(q => q.position[0])) : -2.5;
       extended.push({
-        id:       Date.now() + i,
-        name:     `Qubit ${extended.length + 1}`,
-        rotation: new THREE.Quaternion(),
-        position: [maxX + 2.5, 0, 0],
-        groupId:  null,
+        id: Date.now() + i, name: `Qubit ${extended.length + 1}`,
+        rotation: new THREE.Quaternion(), position: [maxX + 2.5, 0, 0],
+        groupId: null, topoPos: [120 + i * 80, 120],
       });
     }
     setQubits(extended);
@@ -181,20 +192,96 @@ function App() {
     setIsPlaying(false);
   };
 
+  // --- TOPOLOGY CANVAS HANDLERS (design canvas only) ---
+  const handleTopoUpdatePos    = useCallback((id, [x, y]) =>
+    setTopoQubits(prev => prev.map(q => q.id === id ? { ...q, topoPos: [x, y] } : q)), []);
+
+  const handleTopoAddQubit     = useCallback((x, y) => {
+    const newId = Date.now();
+    setTopoQubits(prev => [...prev, { id: newId, name: `q${prev.length}`, topoPos: [x, y] }]);
+  }, []);
+
+  const handleTopoDeleteQubit  = useCallback((id) => {
+    setTopoQubits(prev => prev.filter(q => q.id !== id));
+    setTopoEdges(prev => prev.filter(e => e[0] !== id && e[1] !== id));
+  }, []);
+
+  const handleTopoAddEdge      = useCallback((a, b) => setTopoEdges(prev => [...prev, [a, b]]), []);
+  const handleTopoDeleteEdge   = useCallback((i)     => setTopoEdges(prev => prev.filter((_, idx) => idx !== i)), []);
+
+  // Save: snapshot current canvas as a named template. No simulation changes.
+  const handleSaveShape = useCallback((name) => {
+    setSavedShapes(prev => [...prev, {
+      name,
+      qubits: topoQubits.map(q => ({ id: q.id, name: q.name, topoPos: [...q.topoPos] })),
+      edges:  topoEdges.map(e => [...e]),
+    }]);
+  }, [topoQubits, topoEdges]);
+
+  // Load into topology canvas for editing (still no simulation changes).
+  const handleLoadShape = useCallback((shape) => {
+    setTopoQubits(shape.qubits.map(q => ({ ...q, topoPos: [...q.topoPos] })));
+    setTopoEdges(shape.edges.map(e => [...e]));
+  }, []);
+
+  // --- STAMP SHAPE INTO SIMULATION ---
+  // Fresh IDs, new group, 2D topoPos → 3D position, remapped edges.
+  const handleStampShape = useCallback((shape) => {
+    const groupId = Date.now();
+    const base    = groupId + 1;
+
+    const existingMaxX = qubits.length > 0
+      ? Math.max(...qubits.map(q => q.position[0]))
+      : -2.5;
+
+    // Normalise relative to shape's own bounding box
+    const xs   = shape.qubits.map(q => q.topoPos[0]);
+    const ys   = shape.qubits.map(q => q.topoPos[1]);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+
+    const idRemap  = {};
+    const newQubits = shape.qubits.map((sq, i) => {
+      const newId    = base + i;
+      idRemap[sq.id] = newId;
+      const relX     = (sq.topoPos[0] - minX) * TOPO_TO_3D;
+      const relZ     = (sq.topoPos[1] - minY) * TOPO_TO_3D;
+      return {
+        id:       newId,
+        name:     `${shape.name} ${sq.name}`,
+        rotation: new THREE.Quaternion(),
+        position: [existingMaxX + 2.5 + relX, 0, relZ],
+        groupId:  groupId,
+        topoPos:  [...sq.topoPos],
+      };
+    });
+
+    const newEdges = shape.edges
+      .map(([a, b]) => [idRemap[a], idRemap[b]])
+      .filter(([a, b]) => a !== undefined && b !== undefined);
+
+    setGroups(prev   => [...prev, { id: groupId, name: shape.name, parentId: null }]);
+    setQubits(prev   => [...prev, ...newQubits]);
+    setSimEdges(prev => [...prev, ...newEdges]);
+    setSelected({ type: 'group', id: groupId });
+  }, [qubits]);
+
+  // --- CIRCUIT GRID EDGE SET ---
+  const simEdgeSet = useMemo(() => {
+    const s = new Set();
+    simEdges.forEach(([a, b]) => { s.add(`${a}-${b}`); s.add(`${b}-${a}`); });
+    return s;
+  }, [simEdges]);
+
   // --- STATE VECTOR SIMULATION ---
   const computedQubits = useMemo(() => {
     const blochResults = simulateAllQubits(qubits, circuit, currentStep);
-    return qubits.map((q, i) => ({
-      ...q,
-      blochData: blochResults[i] ?? null,
-    }));
+    return qubits.map((q, i) => ({ ...q, blochData: blochResults[i] ?? null }));
   }, [qubits, circuit, currentStep]);
 
-  // --- RENDER ---
   return (
     <div className="app-layout">
 
-      {/* 1. Left Sidebar */}
       <div className="sidebar-container" style={{ width: sidebarWidth }}>
         <Sidebar
           qubits={computedQubits}
@@ -204,12 +291,11 @@ function App() {
           onAddQubit={(targetGroupId = null) => {
             const newId = Date.now();
             const maxX  = qubits.length > 0 ? Math.max(...qubits.map(q => q.position[0])) : -2.5;
+            const count = qubits.length;
             setQubits(prev => [...prev, {
-              id: newId,
-              name: `Qubit ${qubits.length + 1}`,
-              rotation: new THREE.Quaternion(),
-              position: [maxX + 2.5, 0, 0],
-              groupId: targetGroupId,
+              id: newId, name: `Qubit ${count + 1}`,
+              rotation: new THREE.Quaternion(), position: [maxX + 2.5, 0, 0],
+              groupId: targetGroupId, topoPos: [120 + count * 80, 120],
             }]);
             setSelected({ type: 'qubit', id: newId });
           }}
@@ -223,78 +309,97 @@ function App() {
           onMoveGroup={moveGroup}
           onGroupPositionChange={handleGroupPositionChange}
           onDeleteGroup={handleDeleteGroup}
+          savedShapes={savedShapes}
+          onStampShape={handleStampShape}
         />
       </div>
 
       <div className="resizer-vertical" onMouseDown={startResizingSidebar} />
 
-      {/* 2. Main Content */}
       <main className="main-content">
-
-        {/* Bloch sphere view */}
-        <div className="sphere-pane" style={{ height: `calc(100% - ${bottomHeight}px)` }}>
-          <BlochSphere
-            qubits={computedQubits}
-            selected={selected}
-            highlightedIds={highlightedQubitIds}
-            onSelect={setSelected}
-            circuit={circuit}
-            currentStep={currentStep}
-          />
+        <div className="mode-toggle-bar">
+          <button className={`mode-btn ${mode === 'simulate' ? 'active' : ''}`}
+            onClick={() => setMode('simulate')}>
+            <span className="mode-btn-icon">◈</span> Simulate
+          </button>
+          <button className={`mode-btn ${mode === 'topology' ? 'active' : ''}`}
+            onClick={() => setMode('topology')}>
+            <span className="mode-btn-icon">⬡</span> Topology
+          </button>
+          {mode === 'simulate' && simEdges.length > 0 && (
+            <span className="mode-topo-info">
+              {simEdges.length} connection{simEdges.length !== 1 ? 's' : ''} active
+            </span>
+          )}
+          {mode === 'topology' && (
+            <span className="mode-topo-info">
+              design only — changes do not affect simulation
+            </span>
+          )}
         </div>
 
-        <div className="resizer-horizontal" onMouseDown={startResizingBottom} />
-
-        {/* Circuit pane */}
-        <div className="circuit-pane" style={{ height: bottomHeight }}>
-          <div className="circuit-controls">
-
-            <button className="control-btn" onClick={handlePlayPause}>
-              {isPlaying ? '⏸ Pause' : '▶ Play'}
-            </button>
-            <button className="control-btn" onClick={handleStop}>⏹ Stop</button>
-
-            <span className="preset-label">Presets:</span>
-            <button
-              className="control-btn preset-btn preset-bell"
-              title="Φ+ Bell state — H on q0, CNOT(q0→q1). Creates maximally entangled pair."
-              onClick={() => applyPreset(createBellStateCircuit, 2)}
-            >
-              Φ+ Bell
-            </button>
-            <button
-              className="control-btn preset-btn preset-ghz"
-              title="GHZ state — all qubits maximally entangled: (|00…0⟩+|11…1⟩)/√2"
-              onClick={() => applyPreset(createGHZCircuit, Math.max(qubits.length, 3))}
-            >
-              GHZ
-            </button>
-            <button
-              className="control-btn preset-btn preset-teleport"
-              title="Quantum teleportation (unitary portion). q0=input, q1=Alice, q2=Bob."
-              onClick={() => applyPreset(createTeleportationCircuit, 3)}
-            >
-              Teleport
-            </button>
-
-            <div className="scrubber-container">
-              <span className="step-label">Step: {currentStep} / {MAX_STEPS}</span>
-              <input
-                type="range" min="0" max={MAX_STEPS} value={currentStep}
-                onChange={handleStepChange} className="scrubber-slider"
+        {mode === 'simulate' ? (
+          <>
+            <div className="sphere-pane" style={{ height: `calc(100% - ${bottomHeight}px - 40px)` }}>
+              <BlochSphere
+                qubits={computedQubits}
+                selected={selected}
+                highlightedIds={highlightedQubitIds}
+                onSelect={setSelected}
+                circuit={circuit}
+                currentStep={currentStep}
+                edges={simEdges}
               />
             </div>
-          </div>
 
-          <div className="circuit-grid-wrapper">
-            <CircuitGrid
-              qubits={qubits}
-              circuit={circuit}
-              onGateChange={handleGateChange}
-              currentStep={currentStep}
+            <div className="resizer-horizontal" onMouseDown={startResizingBottom} />
+
+            <div className="circuit-pane" style={{ height: bottomHeight }}>
+              <div className="circuit-controls">
+                <button className="control-btn" onClick={handlePlayPause}>
+                  {isPlaying ? '⏸ Pause' : '▶ Play'}
+                </button>
+                <button className="control-btn" onClick={handleStop}>⏹ Stop</button>
+                <span className="preset-label">Presets:</span>
+                <button className="control-btn preset-btn preset-bell"
+                  onClick={() => applyPreset(createBellStateCircuit, 2)}>Φ+ Bell</button>
+                <button className="control-btn preset-btn preset-ghz"
+                  onClick={() => applyPreset(createGHZCircuit, Math.max(qubits.length, 3))}>GHZ</button>
+                <button className="control-btn preset-btn preset-teleport"
+                  onClick={() => applyPreset(createTeleportationCircuit, 3)}>Teleport</button>
+                <div className="scrubber-container">
+                  <span className="step-label">Step: {currentStep} / {MAX_STEPS}</span>
+                  <input type="range" min="0" max={MAX_STEPS} value={currentStep}
+                    onChange={handleStepChange} className="scrubber-slider" />
+                </div>
+              </div>
+              <div className="circuit-grid-wrapper">
+                <CircuitGrid
+                  qubits={qubits}
+                  circuit={circuit}
+                  onGateChange={handleGateChange}
+                  currentStep={currentStep}
+                  edgeSet={simEdges.length > 0 ? simEdgeSet : null}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="topology-pane">
+            <TopologyCanvas
+              qubits={topoQubits}
+              edges={topoEdges}
+              onUpdateQubitPosition={handleTopoUpdatePos}
+              onAddQubit={handleTopoAddQubit}
+              onDeleteQubit={handleTopoDeleteQubit}
+              onAddEdge={handleTopoAddEdge}
+              onDeleteEdge={handleTopoDeleteEdge}
+              onSaveShape={handleSaveShape}
+              savedShapes={savedShapes}
+              onLoadShape={handleLoadShape}
             />
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
