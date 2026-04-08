@@ -217,9 +217,10 @@ function SingleQubit({ rotation, blochData, position, label, isSelected, onClick
       <ArrowTrail trailDirs={trailDirs} />
       <GatePill gateName={currentGate} />
       <axesHelper args={[1]} />
+      <axesHelper args={[-1]} />
       <arrowHelper args={[direction, new THREE.Vector3(0, 0, 0), 1, arrowColor]} />
 
-      <PoleDot position={[0,  1.1, 0]} label="0" color="#cc2200" glowColor="#ff4422" opacity={p0} />
+      <PoleDot position={[0,  1.1, 0]} label="0" color="#dfa093" glowColor="#ff4422" opacity={p0} />
       <PoleDot position={[0, -1.1, 0]} label="1" color="#00cc44" glowColor="#00ff55" opacity={p1} />
 
       <Html position={[0, -1.6, 0]} center>
