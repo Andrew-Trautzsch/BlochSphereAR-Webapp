@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import Sidebar from './components/Sidebar/Sidebar';
 import BlochSphere from './components/BlochSphere/BlochSphere';
@@ -37,6 +37,12 @@ function App() {
   // Simulation-side topology edges (populated when shapes are stamped)
   const [simEdges, setSimEdges] = useState([]);
 
+  // --- MEASUREMENT STATE ---
+  const [stochastic,        setStochastic]        = useState(false);
+  // Cache stores { [qubitIdx_step]: 0|1 } — stable across re-renders in stochastic mode
+  // Cleared when circuit changes or simulation resets
+  const measurementCacheRef = useRef({});
+
   // --- TOPOLOGY CANVAS STATE (design tool, completely independent) ---
   const [topoQubits,  setTopoQubits]  = useState([]);
   const [topoEdges,   setTopoEdges]   = useState([]);
@@ -61,7 +67,11 @@ function App() {
   }, [isPlaying]);
 
   const handlePlayPause  = () => setIsPlaying(p => !p);
-  const handleStop       = () => { setIsPlaying(false); setCurrentStep(0); };
+  const handleStop       = () => {
+    setIsPlaying(false);
+    setCurrentStep(0);
+    measurementCacheRef.current = {}; // clear cached outcomes on reset
+  };
   const handleStepChange = (e) => { setIsPlaying(false); setCurrentStep(Number(e.target.value)); };
 
   // --- RESIZING ---
@@ -162,6 +172,7 @@ function App() {
 
   // --- CIRCUIT ---
   const handleGateChange = (qubitId, stepIndex, gateName) => {
+    measurementCacheRef.current = {}; // invalidate cached outcomes when circuit changes
     setCircuit(prev => {
       const row = prev[qubitId] ? [...prev[qubitId]] : [];
       row[stepIndex] = gateName;
@@ -266,6 +277,23 @@ function App() {
     setSelected({ type: 'group', id: groupId });
   }, [qubits]);
 
+  // --- SIM EDGE MANAGEMENT ---
+  const handleAddSimEdge = useCallback((aId, bId) => {
+    // Prevent duplicates in both directions
+    setSimEdges(prev => {
+      const exists = prev.some(
+        ([a, b]) => (a === aId && b === bId) || (a === bId && b === aId)
+      );
+      return exists ? prev : [...prev, [aId, bId]];
+    });
+  }, []);
+
+  const handleRemoveSimEdge = useCallback((aId, bId) => {
+    setSimEdges(prev =>
+      prev.filter(([a, b]) => !((a === aId && b === bId) || (a === bId && b === aId)))
+    );
+  }, []);
+
   // --- CIRCUIT GRID EDGE SET ---
   const simEdgeSet = useMemo(() => {
     const s = new Set();
@@ -275,9 +303,28 @@ function App() {
 
   // --- STATE VECTOR SIMULATION ---
   const computedQubits = useMemo(() => {
-    const blochResults = simulateAllQubits(qubits, circuit, currentStep);
+    const blochResults = simulateAllQubits(
+      qubits, circuit, currentStep,
+      stochastic, measurementCacheRef.current
+    );
     return qubits.map((q, i) => ({ ...q, blochData: blochResults[i] ?? null }));
-  }, [qubits, circuit, currentStep]);
+  }, [qubits, circuit, currentStep, stochastic]);
+
+  // Build measuredQubits map for CircuitGrid: { [qubitId]: { outcome, step } }
+  const measuredQubits = useMemo(() => {
+    const map = {};
+    computedQubits.forEach(q => {
+      if (q.blochData?.measured) {
+        // Find which step the M gate is on for this qubit
+        const row = circuit[q.id] || [];
+        const step = row.findIndex(g => g === 'M');
+        if (step !== -1) {
+          map[q.id] = { outcome: q.blochData.measurementOutcome, step };
+        }
+      }
+    });
+    return map;
+  }, [computedQubits, circuit]);
 
   return (
     <div className="app-layout">
@@ -311,6 +358,9 @@ function App() {
           onDeleteGroup={handleDeleteGroup}
           savedShapes={savedShapes}
           onStampShape={handleStampShape}
+          simEdges={simEdges}
+          onAddSimEdge={handleAddSimEdge}
+          onRemoveSimEdge={handleRemoveSimEdge}
         />
       </div>
 
@@ -349,6 +399,7 @@ function App() {
                 circuit={circuit}
                 currentStep={currentStep}
                 edges={simEdges}
+                onAddSimEdge={handleAddSimEdge}
               />
             </div>
 
@@ -360,6 +411,19 @@ function App() {
                   {isPlaying ? '⏸ Pause' : '▶ Play'}
                 </button>
                 <button className="control-btn" onClick={handleStop}>⏹ Stop</button>
+
+                <button
+                  className={`control-btn measure-mode-btn ${stochastic ? 'stochastic' : 'deterministic'}`}
+                  onClick={() => {
+                    measurementCacheRef.current = {};
+                    setStochastic(s => !s);
+                  }}
+                  title={stochastic
+                    ? 'Stochastic: measurement outcomes are random. Click to switch to deterministic.'
+                    : 'Deterministic: always collapses to higher-probability outcome. Click to switch to stochastic.'}
+                >
+                  {stochastic ? '⚄ Stochastic' : '⊟ Deterministic'}
+                </button>
                 <span className="preset-label">Presets:</span>
                 <button className="control-btn preset-btn preset-bell"
                   onClick={() => applyPreset(createBellStateCircuit, 2)}>Φ+ Bell</button>
@@ -380,6 +444,7 @@ function App() {
                   onGateChange={handleGateChange}
                   currentStep={currentStep}
                   edgeSet={simEdges.length > 0 ? simEdgeSet : null}
+                  measuredQubits={measuredQubits}
                 />
               </div>
             </div>

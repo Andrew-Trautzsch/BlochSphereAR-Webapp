@@ -222,3 +222,36 @@ html, body, #root {
 
 .preset-teleport      { border-color: #009688; color: #4db6ac; }
 .preset-teleport:hover{ background: rgba(0,150,136,0.2); }
+
+/* ── Measurement mode toggle ── */
+.measure-mode-btn {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  border-radius: 5px;
+  transition: all 0.15s;
+}
+
+.measure-mode-btn.deterministic {
+  background: #1a1a2e;
+  border-color: #4a4a8a;
+  color: #9090cc;
+}
+
+.measure-mode-btn.deterministic:hover {
+  background: #22223a;
+  border-color: #6a6aaa;
+  color: #b0b0ee;
+}
+
+.measure-mode-btn.stochastic {
+  background: #1a0d2e;
+  border-color: #8a2aaa;
+  color: #cc70ee;
+}
+
+.measure-mode-btn.stochastic:hover {
+  background: #22103a;
+  border-color: #aa3acc;
+  color: #dd90ff;
+}

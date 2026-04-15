@@ -238,3 +238,74 @@
   font-style: italic;
   text-align: center;
 }
+
+/* ── Measurement gate ── */
+.gate-box.gate-measure {
+  width: 30px;
+  height: 30px;
+  background: #1a1a2e;
+  border: 2px solid #e040fb;
+  color: #e040fb;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.02em;
+}
+
+/* Post-measurement slot — greyed out, blocked */
+.gate-slot.post-measure {
+  cursor: not-allowed;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255,255,255,0.02) 4px,
+    rgba(255,255,255,0.02) 8px
+  );
+}
+
+.gate-slot.post-measure:hover {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255,255,255,0.03) 4px,
+    rgba(255,255,255,0.03) 8px
+  );
+}
+
+.wire-line.wire-measured {
+  background: #2a2a3a;
+  opacity: 0.4;
+}
+
+.post-measure-fill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Measurement outcome badge on qubit label */
+.measured-badge {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 0.65rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.03em;
+}
+
+.measured-0 {
+  background: #0d1a2e;
+  border: 1px solid #2255aa;
+  color: #7ab3ff;
+}
+
+.measured-1 {
+  background: #1a0d0d;
+  border: 1px solid #aa2222;
+  color: #ff7a7a;
+}

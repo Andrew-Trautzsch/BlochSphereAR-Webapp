@@ -7,6 +7,7 @@ const AVAILABLE_GATES = [
   'C', 'TG',
   'CZC', 'CZT',
   'SWA', 'SWB',
+  'M',
 ];
 
 // Two-qubit gate tokens
@@ -19,7 +20,7 @@ const PARTNER_MAP = {
   'SWA': 'SWB', 'SWB': 'SWA',
 };
 
-const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep, edgeSet }) => {
+const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep, edgeSet, measuredQubits }) => {
   const steps      = 20;
   const cellWidth  = 40;
   const rowHeight  = 50;
@@ -140,57 +141,89 @@ const CircuitGrid = ({ qubits, circuit, onGateChange, currentStep, edgeSet }) =>
           {renderConnections()}
         </svg>
 
-        {qubits.map(qubit => (
-          <div key={qubit.id} className="circuit-row">
-            <div className="qubit-label-cell">{qubit.name}</div>
+        {qubits.map(qubit => {
+          // Find the step at which this qubit is measured (if any)
+          const measureStep = (() => {
+            const row = circuit[qubit.id] || [];
+            for (let i = 0; i < row.length; i++) {
+              if (row[i] === 'M') return i;
+            }
+            return null;
+          })();
+          const measuredInfo = measuredQubits?.[qubit.id]; // { outcome, step }
 
-            <div className="wire-track">
-              {Array.from({ length: steps }).map((_, stepIndex) => {
-                const gate     = circuit[qubit.id]?.[stepIndex];
-                const isActive = stepIndex === currentStep - 1;
-                const violation = gate ? isTopologyViolation(qubit.id, stepIndex, gate) : false;
+          return (
+            <div key={qubit.id} className="circuit-row">
+              <div className="qubit-label-cell">
+                {qubit.name}
+                {measuredInfo && currentStep > measuredInfo.step && (
+                  <span className={`measured-badge measured-${measuredInfo.outcome}`}>
+                    {measuredInfo.outcome === 0 ? '|0⟩' : '|1⟩'}
+                  </span>
+                )}
+              </div>
 
-                let gateClass = '';
-                let gateLabel = gate ?? '';
+              <div className="wire-track">
+                {Array.from({ length: steps }).map((_, stepIndex) => {
+                  const gate     = circuit[qubit.id]?.[stepIndex];
+                  const isActive = stepIndex === currentStep - 1;
+                  const violation = gate ? isTopologyViolation(qubit.id, stepIndex, gate) : false;
 
-                switch (gate) {
-                  case 'C':
-                    gateClass = 'gate-control'; gateLabel = ''; break;
-                  case 'TG':
-                    gateClass = 'gate-target';  gateLabel = '+'; break;
-                  case 'CZC':
-                    gateClass = 'gate-cz-control'; gateLabel = ''; break;
-                  case 'CZT':
-                    gateClass = 'gate-cz-target';  gateLabel = 'Z'; break;
-                  case 'SWA': case 'SWB':
-                    gateClass = 'gate-swap'; gateLabel = '×'; break;
-                  default: break;
-                }
+                  // Block slots after measurement on this qubit
+                  const isPostMeasure = measureStep !== null && stepIndex > measureStep;
 
-                return (
-                  <div
-                    key={stepIndex}
-                    className={`gate-slot ${gate ? 'filled' : ''} ${isActive ? 'active-slot' : ''}`}
-                    title={violation ? '⚠ No topology edge between these qubits' : undefined}
-                    onClick={() => {
-                      const currentIdx = AVAILABLE_GATES.indexOf(gate ?? null);
-                      const nextGate   = AVAILABLE_GATES[(currentIdx + 1) % AVAILABLE_GATES.length];
-                      onGateChange(qubit.id, stepIndex, nextGate);
-                    }}
-                  >
-                    <div className="wire-line" />
-                    {gate && (
-                      <div className={`gate-box ${gateClass} gate-${gate} ${violation ? 'topo-violation' : ''}`}>
-                        {gateLabel}
-                        {violation && <span className="violation-dot" />}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  let gateClass = '';
+                  let gateLabel = gate ?? '';
+
+                  switch (gate) {
+                    case 'C':
+                      gateClass = 'gate-control'; gateLabel = ''; break;
+                    case 'TG':
+                      gateClass = 'gate-target';  gateLabel = '+'; break;
+                    case 'CZC':
+                      gateClass = 'gate-cz-control'; gateLabel = ''; break;
+                    case 'CZT':
+                      gateClass = 'gate-cz-target';  gateLabel = 'Z'; break;
+                    case 'SWA': case 'SWB':
+                      gateClass = 'gate-swap'; gateLabel = '×'; break;
+                    case 'M':
+                      gateClass = 'gate-measure'; gateLabel = 'M'; break;
+                    default: break;
+                  }
+
+                  return (
+                    <div
+                      key={stepIndex}
+                      className={`gate-slot ${gate ? 'filled' : ''} ${isActive ? 'active-slot' : ''} ${isPostMeasure ? 'post-measure' : ''}`}
+                      title={
+                        violation ? '⚠ No topology edge between these qubits'
+                        : isPostMeasure ? 'Qubit has been measured — no further gates'
+                        : undefined
+                      }
+                      onClick={() => {
+                        if (isPostMeasure) return; // block clicks after measurement
+                        const currentIdx = AVAILABLE_GATES.indexOf(gate ?? null);
+                        const nextGate   = AVAILABLE_GATES[(currentIdx + 1) % AVAILABLE_GATES.length];
+                        onGateChange(qubit.id, stepIndex, nextGate);
+                      }}
+                    >
+                      <div className={`wire-line ${isPostMeasure ? 'wire-measured' : ''}`} />
+                      {gate && (
+                        <div className={`gate-box ${gateClass} gate-${gate} ${violation ? 'topo-violation' : ''}`}>
+                          {gateLabel}
+                          {violation && <span className="violation-dot" />}
+                        </div>
+                      )}
+                      {isPostMeasure && !gate && (
+                        <div className="post-measure-fill" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {qubits.length === 0 && (
           <div className="empty-message">No Qubits. Add one from the Sidebar.</div>

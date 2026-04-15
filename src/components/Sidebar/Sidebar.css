@@ -347,3 +347,143 @@
   border-top: 1px solid #333;
   margin: 16px 0;
 }
+
+/* ── Connections panel ── */
+.connections-panel {
+  margin-bottom: 16px;
+  background: #111820;
+  border: 1px solid #1e2e42;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.connections-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4a7aaa;
+  margin-bottom: 10px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.connections-empty {
+  font-size: 0.78rem;
+  color: #333;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+.connections-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.connection-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #0d1a2e;
+  border: 1px solid #2a4a6a;
+  border-radius: 20px;
+  padding: 3px 8px 3px 10px;
+}
+
+.chip-name {
+  font-size: 0.75rem;
+  color: #7ab3ff;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.chip-remove {
+  background: transparent;
+  border: none;
+  color: #3a5a7a;
+  font-size: 0.65rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.chip-remove:hover {
+  color: #cc4444;
+}
+
+.connections-add {
+  position: relative;
+}
+
+.connections-search {
+  width: 100%;
+  background: #0a1018;
+  border: 1px solid #1e3050;
+  border-radius: 6px;
+  color: #ccc;
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.connections-search:focus {
+  border-color: #3b6fd4;
+}
+
+.connections-search::placeholder {
+  color: #2a3a4a;
+}
+
+.connections-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #0e1520;
+  border: 1px solid #1e3050;
+  border-radius: 6px;
+  z-index: 100;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+.connections-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #111a28;
+  color: #aac8ee;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.connections-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.connections-dropdown-item:hover {
+  background: #112040;
+  color: #cce0ff;
+}
+
+.connections-dropdown-more {
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  color: #3a5a7a;
+  font-style: italic;
+}
+
+.connections-dropdown-empty {
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: #3a5a7a;
+  font-style: italic;
+}
