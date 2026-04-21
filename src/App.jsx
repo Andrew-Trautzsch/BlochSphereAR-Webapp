@@ -381,11 +381,6 @@ function App() {
               {simEdges.length} connection{simEdges.length !== 1 ? 's' : ''} active
             </span>
           )}
-          {mode === 'topology' && (
-            <span className="mode-topo-info">
-              design only — changes do not affect simulation
-            </span>
-          )}
         </div>
 
         {mode === 'simulate' ? (
