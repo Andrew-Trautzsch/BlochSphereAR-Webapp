@@ -19,6 +19,13 @@
   flex-shrink: 0;
 }
 
+/* ── Circuit header left section ── */
+.circuit-header-left {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .header-title {
   width: 90px;
   padding: 5px 10px;
@@ -30,6 +37,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .topo-active-badge {
@@ -72,6 +80,15 @@
   height: 100%;
   pointer-events: none;
   z-index: 5;
+}
+
+/* Allow SVG overlay to receive pointer events for subroutine blocks */
+.circuit-connections-overlay {
+  pointer-events: none;
+}
+
+.circuit-connections-overlay .sr-overlay-group {
+  pointer-events: all;
 }
 
 .circuit-row {
@@ -308,4 +325,80 @@
   background: #1a0d0d;
   border: 1px solid #aa2222;
   color: #ff7a7a;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SUBROUTINE STYLES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Select-mode button in header ── */
+.sr-select-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 11px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid #333;
+  border-radius: 0;
+  color: #4a6a9a;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  height: 100%;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.sr-select-mode-btn:hover {
+  background: #0f1a2e;
+  color: #7ab3ff;
+  border-color: #1e3050;
+}
+
+.sr-select-mode-btn.active {
+  background: #0f1a2e;
+  color: #3b82f6;
+  border-left-color: #1e3050;
+}
+
+/* ── Cell in selection ── */
+.gate-slot.in-selection {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* ── Stamp mode cells ── */
+.gate-slot.stamp-mode {
+  cursor: copy;
+}
+
+.gate-slot.stamp-mode:hover {
+  background: rgba(59, 130, 246, 0.14);
+}
+
+/* ── SVG subroutine overlay ── */
+.sr-overlay-group {
+  pointer-events: all;
+  cursor: default;
+}
+
+.sr-overlay-remove {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sr-overlay-group:hover .sr-overlay-remove {
+  opacity: 1;
+}
+
+/* ── SVG selection rect ── */
+.sr-selection-rect {
+  animation: sr-sel-pulse 1s ease infinite;
+  pointer-events: none;
+}
+
+@keyframes sr-sel-pulse {
+  0%, 100% { stroke-opacity: 0.9; }
+  50%       { stroke-opacity: 0.4; }
 }

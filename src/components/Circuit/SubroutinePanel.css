@@ -1,0 +1,231 @@
+/* ── Root ── */
+.srp-root {
+  background: #090d14;
+  border-bottom: 1px solid #1a2030;
+  flex-shrink: 0;
+}
+
+/* ── Header ── */
+.srp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s;
+}
+
+.srp-header:hover {
+  background: #0e1320;
+}
+
+.srp-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4a6a9a;
+}
+
+.srp-icon {
+  font-size: 0.9rem;
+  color: #3b82f6;
+}
+
+.srp-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #0f1e38;
+  border: 1px solid #1e3050;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  color: #5a8aee;
+  font-weight: 700;
+}
+
+.srp-toggle {
+  font-size: 0.6rem;
+  color: #2a3a5a;
+}
+
+/* ── Body ── */
+.srp-body {
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Stamp banner ── */
+.srp-stamp-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: #0f1a2e;
+  border: 1px solid #2a4a6a;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #7ab3ff;
+  letter-spacing: 0.03em;
+  animation: srp-pulse-border 1.4s ease infinite;
+}
+
+@keyframes srp-pulse-border {
+  0%, 100% { border-color: #2a4a6a; }
+  50%       { border-color: #5a8aee; }
+}
+
+.srp-stamp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+  animation: srp-dot-pulse 1s ease infinite;
+}
+
+@keyframes srp-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+.srp-cancel-btn {
+  margin-left: auto;
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid #2a3a5a;
+  border-radius: 4px;
+  color: #4a6a9a;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.srp-cancel-btn:hover {
+  border-color: #cc4444;
+  color: #ff7a7a;
+}
+
+/* ── Subroutine list ── */
+.srp-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Subroutine card ── */
+.srp-card {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #0c1018;
+  border: 1px solid #1a2030;
+  border-radius: 7px;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-width: 180px;
+  flex: 1;
+}
+
+.srp-card:hover {
+  border-color: color-mix(in srgb, var(--sr-color) 40%, #1a2030);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sr-color) 15%, transparent);
+}
+
+.srp-card.stamping {
+  border-color: var(--sr-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sr-color) 20%, transparent);
+}
+
+/* Left accent stripe */
+.srp-card-accent {
+  width: 3px;
+  align-self: stretch;
+  background: var(--sr-color);
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.srp-card-body {
+  flex: 1;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.srp-card-name {
+  font-size: 0.82rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #c9d1d9;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.srp-card-desc {
+  font-size: 0.65rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #334455;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.srp-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.srp-stamp-btn {
+  padding: 4px 10px;
+  background: color-mix(in srgb, var(--sr-color) 10%, #0a0f18);
+  border: 1px solid color-mix(in srgb, var(--sr-color) 35%, transparent);
+  border-radius: 5px;
+  color: var(--sr-color);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.srp-stamp-btn:hover,
+.srp-stamp-btn.active {
+  background: color-mix(in srgb, var(--sr-color) 20%, #0a0f18);
+  border-color: var(--sr-color);
+}
+
+.srp-delete-btn {
+  padding: 4px 6px;
+  background: transparent;
+  border: 1px solid #1a2030;
+  border-radius: 5px;
+  color: #2a3a4a;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.srp-delete-btn:hover {
+  border-color: #cc4444;
+  color: #ff7a7a;
+  background: rgba(204, 68, 68, 0.08);
+}
