@@ -64,19 +64,18 @@ const CircuitGrid = ({
   const labelWidth = 90;
 
   // ── Selection state (for creating subroutines) ──
-  const [selMode,     setSelMode]     = useState(false);    // is select-mode active?
-  const [selAnchor,   setSelAnchor]   = useState(null);     // { qubitIdx, stepIdx }
-  const [selCurrent,  setSelCurrent]  = useState(null);     // { qubitIdx, stepIdx }
-  const [isDragging,  setIsDragging]  = useState(false);
-  const [showEditor,  setShowEditor]  = useState(false);
-  const gridRef = useRef(null);
+  const [selMode,    setSelMode]    = useState(false);
+  const [selAnchor,  setSelAnchor]  = useState(null);
+  const [selCurrent, setSelCurrent] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
 
-  // Normalised selection bounds (row/col min/max, always valid order)
+  // Normalised selection bounds
   const selBounds = selAnchor && selCurrent ? {
-    rowMin:  Math.min(selAnchor.qubitIdx,  selCurrent.qubitIdx),
-    rowMax:  Math.max(selAnchor.qubitIdx,  selCurrent.qubitIdx),
-    colMin:  Math.min(selAnchor.stepIdx,   selCurrent.stepIdx),
-    colMax:  Math.max(selAnchor.stepIdx,   selCurrent.stepIdx),
+    rowMin: Math.min(selAnchor.qubitIdx,  selCurrent.qubitIdx),
+    rowMax: Math.max(selAnchor.qubitIdx,  selCurrent.qubitIdx),
+    colMin: Math.min(selAnchor.stepIdx,   selCurrent.stepIdx),
+    colMax: Math.max(selAnchor.stepIdx,   selCurrent.stepIdx),
   } : null;
 
   const inSelection = (rowIdx, colIdx) =>
@@ -99,7 +98,7 @@ const CircuitGrid = ({
     setSelCurrent({ qubitIdx: rowIdx, stepIdx: colIdx });
   }, [selMode, isDragging]);
 
-  const handleCellMouseUp = useCallback((e) => {
+  const handleCellMouseUp = useCallback(() => {
     if (!selMode || !isDragging) return;
     setIsDragging(false);
     if (selAnchor && selCurrent) setShowEditor(true);
@@ -131,7 +130,7 @@ const CircuitGrid = ({
 
   // ── Stamp: clicking a cell while stampingId is set ──
   const handleCellClick = useCallback((e, rowIdx, colIdx) => {
-    if (selMode) return; // handled by mousedown/up
+    if (selMode) return;
 
     if (stampingId) {
       e.stopPropagation();
@@ -139,11 +138,9 @@ const CircuitGrid = ({
       return;
     }
 
-    // Normal gate cycling
     const qubit = qubits[rowIdx];
     if (!qubit) return;
 
-    // Block post-measurement edits
     const measureStep = (() => {
       const row = circuit[qubit.id] || [];
       for (let i = 0; i < row.length; i++) if (row[i] === 'M') return i;
@@ -151,7 +148,7 @@ const CircuitGrid = ({
     })();
     if (measureStep !== null && colIdx > measureStep) return;
 
-    const gate = circuit[qubit.id]?.[colIdx] ?? null;
+    const gate       = circuit[qubit.id]?.[colIdx] ?? null;
     const currentIdx = AVAILABLE_GATES.indexOf(gate);
     const nextGate   = AVAILABLE_GATES[(currentIdx + 1) % AVAILABLE_GATES.length];
     onGateChange(qubit.id, colIdx, nextGate);
@@ -182,7 +179,7 @@ const CircuitGrid = ({
 
       const cnotViolation = edgeSet && cnotCtrl.length > 0 && cnotTgt.length > 0 &&
         !edgeSet.has(`${qubits[cnotCtrl[0]]?.id}-${qubits[cnotTgt[0]]?.id}`);
-      const czViolation = edgeSet && czA.length > 0 && czB.length > 0 &&
+      const czViolation   = edgeSet && czA.length > 0 && czB.length > 0 &&
         !edgeSet.has(`${qubits[czA[0]]?.id}-${qubits[czB[0]]?.id}`);
       const swapViolation = edgeSet && swapA.length > 0 && swapB.length > 0 &&
         !edgeSet.has(`${qubits[swapA[0]]?.id}-${qubits[swapB[0]]?.id}`);
@@ -220,20 +217,15 @@ const CircuitGrid = ({
       const { id, subroutine, qubitIds, stepStart } = instance;
       const rowMin = qubits.findIndex(q => q.id === qubitIds[0]);
       if (rowMin < 0) return null;
-      const rowMax = rowMin + subroutine.qubitCount - 1;
-      const colMin = stepStart;
-      const colMax = stepStart + subroutine.stepCount - 1;
 
-      const x      = labelWidth + colMin * cellWidth + 2;
+      const x      = labelWidth + stepStart * cellWidth + 2;
       const y      = rowMin * rowHeight + 2;
       const width  = subroutine.stepCount * cellWidth - 4;
       const height = subroutine.qubitCount * rowHeight - 4;
-
       const color  = subroutine.color;
 
       return (
         <g key={id} className="sr-overlay-group">
-          {/* Background fill */}
           <rect
             x={x} y={y} width={width} height={height}
             rx={5} ry={5}
@@ -243,10 +235,8 @@ const CircuitGrid = ({
             strokeDasharray="5 3"
             strokeOpacity="0.7"
           />
-          {/* Label */}
           <text
-            x={x + 7}
-            y={y + 14}
+            x={x + 7} y={y + 14}
             fill={color}
             fontSize="10"
             fontFamily="'JetBrains Mono', 'Fira Code', monospace"
@@ -255,7 +245,6 @@ const CircuitGrid = ({
           >
             {subroutine.name}
           </text>
-          {/* Remove button (×) */}
           <g
             className="sr-overlay-remove"
             style={{ cursor: 'pointer' }}
@@ -303,7 +292,7 @@ const CircuitGrid = ({
     );
   };
 
-  // ── Stamp ghost overlay ──
+  // ── Stamp ghost label ──
   const renderStampGhost = () => {
     if (!stampingId) return null;
     const sr = subroutines?.find(s => s.id === stampingId);
@@ -323,7 +312,6 @@ const CircuitGrid = ({
 
   const totalGridWidth = labelWidth + steps * cellWidth;
 
-  // ── Cursor for the body ──
   const bodyCursor = selMode
     ? (isDragging ? 'crosshair' : 'cell')
     : stampingId
@@ -342,24 +330,24 @@ const CircuitGrid = ({
         onDelete={onDeleteSubroutine}
       />
 
-      {/* Header row */}
-      <div className="circuit-header">
-        <span className="circuit-header-left">
-          <span className="header-title">
-            Circuit Editor
-            {edgeSet && (
-              <span className="topo-active-badge" title="Topology constraints active">⬡</span>
-            )}
-          </span>
+      {/* ── Subroutine toolbar — sits above ruler, never disrupts alignment ── */}
+      <div className="circuit-subbar">
+        <button
+          className={`sr-select-mode-btn ${selMode ? 'active' : ''}`}
+          onClick={handleToggleSelMode}
+          title={selMode ? 'Exit selection mode' : 'Select gates to create a subroutine'}
+        >
+          {selMode ? '✕ Cancel selection' : '⊞ New subroutine'}
+        </button>
+      </div>
 
-          {/* Select mode toggle */}
-          <button
-            className={`sr-select-mode-btn ${selMode ? 'active' : ''}`}
-            onClick={handleToggleSelMode}
-            title={selMode ? 'Exit selection mode' : 'Select gates to create a subroutine'}
-          >
-            {selMode ? '✕ Cancel selection' : '⊞ New subroutine'}
-          </button>
+      {/* ── Header row: fixed-width title cell + ruler ticks, perfectly aligned ── */}
+      <div className="circuit-header">
+        <span className="header-title">
+          Circuit Editor
+          {edgeSet && (
+            <span className="topo-active-badge" title="Topology constraints active">⬡</span>
+          )}
         </span>
 
         <div className="time-ruler">
@@ -408,12 +396,14 @@ const CircuitGrid = ({
 
               <div className="wire-track">
                 {Array.from({ length: steps }).map((_, stepIndex) => {
-                  const gate        = circuit[qubit.id]?.[stepIndex];
-                  const isActive    = stepIndex === currentStep - 1;
-                  const violation   = gate ? isTopologyViolation(qubit.id, stepIndex, gate, qubits, circuit, edgeSet) : false;
+                  const gate          = circuit[qubit.id]?.[stepIndex];
+                  const isActive      = stepIndex === currentStep - 1;
+                  const violation     = gate
+                    ? isTopologyViolation(qubit.id, stepIndex, gate, qubits, circuit, edgeSet)
+                    : false;
                   const isPostMeasure = measureStep !== null && stepIndex > measureStep;
-                  const isInSel     = inSelection(rowIdx, stepIndex);
-                  const isStampMode = !!stampingId;
+                  const isInSel       = inSelection(rowIdx, stepIndex);
+                  const isStampMode   = !!stampingId;
 
                   let gateClass = '';
                   let gateLabel = gate ?? '';
@@ -423,10 +413,10 @@ const CircuitGrid = ({
                     case 'TG':  gateClass = 'gate-target';     gateLabel = '+'; break;
                     case 'CZC': gateClass = 'gate-cz-control'; gateLabel = '';  break;
                     case 'CZT': gateClass = 'gate-cz-target';  gateLabel = 'Z'; break;
-                    case 'SWA': case 'SWB':
-                                gateClass = 'gate-swap';       gateLabel = '×'; break;
+                    case 'SWA':
+                    case 'SWB': gateClass = 'gate-swap';       gateLabel = '×'; break;
                     case 'M':   gateClass = 'gate-measure';    gateLabel = 'M'; break;
-                    default:    break;
+                    default: break;
                   }
 
                   return (
@@ -441,10 +431,10 @@ const CircuitGrid = ({
                         isStampMode   ? 'stamp-mode'   : '',
                       ].join(' ').trim()}
                       title={
-                        violation     ? '⚠ No topology edge between these qubits'
+                        violation       ? '⚠ No topology edge between these qubits'
                         : isPostMeasure ? 'Qubit has been measured — no further gates'
-                        : selMode     ? 'Drag to select a region'
-                        : isStampMode ? 'Click to stamp here'
+                        : selMode       ? 'Drag to select a region'
+                        : isStampMode   ? 'Click to stamp here'
                         : undefined
                       }
                       onMouseDown={e => handleCellMouseDown(e, rowIdx, stepIndex)}
@@ -477,7 +467,7 @@ const CircuitGrid = ({
         selection={
           showEditor && selBounds
             ? {
-                qubitIds: qubits.slice(selBounds.rowMin, selBounds.rowMax + 1).map(q => q.id),
+                qubitIds:  qubits.slice(selBounds.rowMin, selBounds.rowMax + 1).map(q => q.id),
                 stepStart: selBounds.colMin,
                 stepEnd:   selBounds.colMax,
               }

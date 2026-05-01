@@ -11,6 +11,18 @@
   color: #ddd;
 }
 
+/* ── Subroutine toolbar (above ruler, never disrupts tick alignment) ── */
+.circuit-subbar {
+  height: 28px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #1a1a1a;
+  display: flex;
+  align-items: center;
+  padding-left: 90px; /* indent by labelWidth so button sits over gate area */
+  flex-shrink: 0;
+}
+
+/* ── Header row: title cell + ruler ticks ── */
 .circuit-header {
   display: flex;
   background: #252526;
@@ -19,15 +31,10 @@
   flex-shrink: 0;
 }
 
-/* ── Circuit header left section ── */
-.circuit-header-left {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
 .header-title {
   width: 90px;
+  min-width: 90px;
+  max-width: 90px;
   padding: 5px 10px;
   font-size: 0.8rem;
   font-weight: bold;
@@ -38,6 +45,7 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .topo-active-badge {
@@ -54,12 +62,14 @@
 
 .ruler-tick {
   width: 40px;
+  min-width: 40px;
   text-align: center;
   font-size: 0.7rem;
   color: #666;
   border-right: 1px solid #333;
   line-height: 30px;
 }
+
 .ruler-tick.active-step {
   background-color: #007bff;
   color: white;
@@ -80,11 +90,6 @@
   height: 100%;
   pointer-events: none;
   z-index: 5;
-}
-
-/* Allow SVG overlay to receive pointer events for subroutine blocks */
-.circuit-connections-overlay {
-  pointer-events: none;
 }
 
 .circuit-connections-overlay .sr-overlay-group {
@@ -127,9 +132,11 @@
   cursor: pointer;
   border-right: 1px solid #2a2a2a;
 }
+
 .gate-slot:hover {
   background: rgba(255, 255, 255, 0.05);
 }
+
 .gate-slot.active-slot {
   background-color: rgba(0, 123, 255, 0.2);
 }
@@ -270,7 +277,7 @@
   letter-spacing: 0.02em;
 }
 
-/* Post-measurement slot — greyed out, blocked */
+/* Post-measurement slot */
 .gate-slot.post-measure {
   cursor: not-allowed;
   background: repeating-linear-gradient(
@@ -331,7 +338,7 @@
    SUBROUTINE STYLES
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Select-mode button in header ── */
+/* ── Select-mode button (lives in .circuit-subbar) ── */
 .sr-select-mode-btn {
   display: flex;
   align-items: center;
@@ -339,7 +346,7 @@
   padding: 0 11px;
   background: transparent;
   border: none;
-  border-left: 1px solid #333;
+  border-left: 1px solid #2a2a2a;
   border-radius: 0;
   color: #4a6a9a;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
