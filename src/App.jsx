@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar/Sidebar';
 import BlochSphere from './components/BlochSphere/BlochSphere';
 import CircuitGrid from './components/Circuit/CircuitGrid';
 import TopologyCanvas from './components/Topology/TopologyCanvas';
+import MultiShotPanel from './components/MultiShot/MultiShotPanel';
 import {
   simulateAllQubits,
   createBellStateCircuit,
@@ -51,6 +52,9 @@ function App() {
   // --- PLAYBACK ---
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying,   setIsPlaying]   = useState(false);
+
+  // --- MULTISHOT ---
+  const [showMultiShot, setShowMultiShot] = useState(false);
 
   // ═══════════════════════════════════════════════════════
   // SUBROUTINE STATE
@@ -462,6 +466,14 @@ function App() {
                 <button className="control-btn" onClick={handleStop}>⏹ Stop</button>
 
                 <button
+                  className={`control-btn ${showMultiShot ? 'preset-btn preset-ghz' : ''}`}
+                  onClick={() => setShowMultiShot(s => !s)}
+                  title="Toggle multi-shot histogram panel"
+                >
+                  {showMultiShot ? '▲ Hide histogram' : '⊞ Multi-shot'}
+                </button>
+
+                <button
                   className={`control-btn measure-mode-btn ${stochastic ? 'stochastic' : 'deterministic'}`}
                   onClick={() => { measurementCacheRef.current = {}; setStochastic(s => !s); }}
                   title={stochastic
@@ -486,25 +498,33 @@ function App() {
                 </div>
               </div>
 
-              <div className="circuit-grid-wrapper">
-                <CircuitGrid
+              {showMultiShot ? (
+                <MultiShotPanel
                   qubits={qubits}
                   circuit={circuit}
-                  onGateChange={handleGateChange}
                   currentStep={currentStep}
-                  edgeSet={simEdges.length > 0 ? simEdgeSet : null}
-                  measuredQubits={measuredQubits}
-                  subroutines={subroutines}
-                  subroutineInstances={subroutineInstances}
-                  stampingId={stampingId}
-                  onSaveSubroutine={handleSaveSubroutine}
-                  onStartStamp={handleStartStamp}
-                  onCancelStamp={handleCancelStamp}
-                  onStampAt={handleStampAt}
-                  onDeleteSubroutine={handleDeleteSubroutine}
-                  onRemoveInstance={handleRemoveInstance}
                 />
-              </div>
+              ) : (
+                <div className="circuit-grid-wrapper">
+                  <CircuitGrid
+                    qubits={qubits}
+                    circuit={circuit}
+                    onGateChange={handleGateChange}
+                    currentStep={currentStep}
+                    edgeSet={simEdges.length > 0 ? simEdgeSet : null}
+                    measuredQubits={measuredQubits}
+                    subroutines={subroutines}c
+                    subroutineInstances={subroutineInstances}
+                    stampingId={stampingId}
+                    onSaveSubroutine={handleSaveSubroutine}
+                    onStartStamp={handleStartStamp}
+                    onCancelStamp={handleCancelStamp}
+                    onStampAt={handleStampAt}
+                    onDeleteSubroutine={handleDeleteSubroutine}
+                    onRemoveInstance={handleRemoveInstance}
+                  />
+                </div>
+              )}
             </div>
           </>
         ) : (

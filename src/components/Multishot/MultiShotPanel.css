@@ -1,0 +1,331 @@
+/* ── Root ── */
+.msp-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0e0e12;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #c9d1d9;
+  overflow: hidden;
+}
+
+/* ── Controls bar ── */
+.msp-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  height: 42px;
+  background: #13131a;
+  border-bottom: 1px solid #1f1f2e;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.msp-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #445566;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.msp-shot-pills {
+  display: flex;
+  gap: 3px;
+}
+
+.msp-pill {
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px solid #1e2030;
+  border-radius: 4px;
+  color: #445;
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.msp-pill:hover {
+  border-color: #2a3a5a;
+  color: #7ab3ff;
+}
+
+.msp-pill.active {
+  border-color: #2a4a8a;
+  background: #0d1a2e;
+  color: #7ab3ff;
+}
+
+.msp-run-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  background: #0d1e38;
+  border: 1px solid #3b6fd4;
+  border-radius: 6px;
+  color: #7ab3ff;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.msp-run-btn:hover:not(:disabled) {
+  background: #112040;
+  border-color: #5a90f4;
+  color: #aad0ff;
+}
+
+.msp-run-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: #1a2a3a;
+  color: #3a5a7a;
+}
+
+.msp-run-btn.running {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.msp-run-icon {
+  font-size: 0.65rem;
+}
+
+/* Spinner */
+.msp-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #2a4a7a;
+  border-top-color: #7ab3ff;
+  border-radius: 50%;
+  animation: msp-spin 0.7s linear infinite;
+}
+
+@keyframes msp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.msp-divider {
+  width: 1px;
+  height: 22px;
+  background: #1e2030;
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+.msp-threshold-slider {
+  width: 80px;
+  cursor: pointer;
+}
+
+/* ── Empty states ── */
+.msp-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #334;
+  font-size: 0.8rem;
+  padding: 24px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.msp-empty code {
+  background: #111828;
+  border: 1px solid #1e2d40;
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: #5a8aee;
+  font-family: inherit;
+}
+
+.msp-empty-icon {
+  font-size: 1.6rem;
+  opacity: 0.3;
+}
+
+/* ── Results area ── */
+.msp-results {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Stats row ── */
+.msp-stats {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #1a1a2a;
+  flex-shrink: 0;
+}
+
+.msp-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+  border-right: 1px solid #1a1a2a;
+}
+
+.msp-stat:last-child {
+  border-right: none;
+}
+
+.msp-stat-val {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #7ab3ff;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.msp-stat-lbl {
+  font-size: 0.6rem;
+  color: #33445a;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ── Qubit label header ── */
+.msp-qubit-header {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #1a1a2a;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.msp-qubit-tag {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  background: #0d1828;
+  border: 1px solid #1e3050;
+  border-radius: 3px;
+  color: #4a7aaa;
+  letter-spacing: 0.05em;
+}
+
+/* ── Histogram ── */
+.msp-histogram {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.msp-bar-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 52px 48px 20px;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  transition: background 0.1s;
+  border-radius: 3px;
+}
+
+.msp-bar-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.msp-bar-row.unexpected {
+  background: rgba(204, 68, 68, 0.04);
+}
+
+.msp-bar-label {
+  font-size: 0.75rem;
+  color: #7ab3ff;
+  letter-spacing: 0.08em;
+  font-family: inherit;
+  text-align: right;
+}
+
+.msp-bar-track {
+  height: 14px;
+  background: #111828;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.msp-bar-fill {
+  height: 100%;
+  background: #1e3a6a;
+  border-radius: 3px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.msp-bar-fill.high {
+  background: #2a5aaa;
+}
+
+.msp-bar-fill.warn {
+  background: #5a2a2a;
+}
+
+.msp-bar-count {
+  font-size: 0.68rem;
+  color: #446;
+  text-align: right;
+}
+
+.msp-bar-pct {
+  font-size: 0.72rem;
+  color: #5a8aaa;
+  text-align: right;
+}
+
+.msp-warn-badge {
+  font-size: 0.7rem;
+  color: #cc6644;
+}
+
+.msp-filtered-msg {
+  color: #334;
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 16px;
+  font-style: italic;
+}
+
+/* ── Insight card ── */
+.msp-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 14px 12px;
+  padding: 10px 12px;
+  background: #0d1828;
+  border: 1px solid #1e3050;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  color: #5a8aaa;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.msp-insight-icon {
+  font-size: 0.9rem;
+  color: #3b6fd4;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
